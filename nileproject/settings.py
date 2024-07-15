@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     ##### Third Party Apps####
     'debug_toolbar',
     'django_countries',
-
+    'taggit',
     ##### Custom Apps####
     'core',
     'store',

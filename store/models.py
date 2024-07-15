@@ -1,8 +1,10 @@
-from uuid import uuid4
-
 from django.db import models
 from django_countries.fields import CountryField
+
+from taggit.managers import TaggableManager
+
 from userauth.models import User
+
 
 RATING_CHOICES = (
     (0, '☆☆☆☆☆'),
@@ -145,6 +147,8 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_update = models.DateTimeField(auto_now=True)
     rating = models.IntegerField(choices=RATING_CHOICES, default=3)
+
+    tags = TaggableManager()
 
     vendor = models.ForeignKey(
         Vendor, on_delete=models.PROTECT, related_name="products")

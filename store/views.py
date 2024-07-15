@@ -1,7 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.db.models import Q, Count
 
-from . models import Vendor, Customer, Address, Category, Product, ProductImage, Order, OrderItem, Cart, CartItem, Review
+from taggit.models import Tag
+
+from . models import Vendor, Category, Product
 
 
 def homepage(request):
@@ -114,3 +116,21 @@ def vendor_detail(request, pk):
         "products": products_in_vendor,
     }
     return render(request, 'store/vendor_detail.html', context=context)
+
+
+def tag_product_list(request, tag_slug=None):
+    tag = None
+
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        products = Product.objects \
+            .filter(publish_status="P") \
+            .filter(tags__in=[tag]) \
+            .order_by("-id")
+
+    context = {
+        'products': products,
+        'tag': tag,
+    }
+
+    return render(request, 'store/tag_product_list.html', context=context)

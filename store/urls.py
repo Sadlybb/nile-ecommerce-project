@@ -22,4 +22,7 @@ urlpatterns = [
     #####   Categories  ######
     path('vendors/', views.vendor_list, name='vendor_list'),
     path('vendors/<int:pk>', views.vendor_detail, name='vendor_detail'),
+
+    #####   Tags  ######
+    path('products/tag/<slug:tag_slug>/', views.tag_product_list, name='tags'),
 ]
