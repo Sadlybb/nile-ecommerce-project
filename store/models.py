@@ -5,6 +5,7 @@ from django_countries.fields import CountryField
 from userauth.models import User
 
 RATING_CHOICES = (
+    (0, '☆☆☆☆☆'),
     (1, '★☆☆☆☆'),
     (2, '★★☆☆☆'),
     (3, '★★★☆☆'),
@@ -28,12 +29,23 @@ class Vendor(models.Model):
     shipping_time = models.CharField(max_length=100, default="1 Day")
     allowed_return_days = models.CharField(max_length=100, default="7 Day")
     warranty_period = models.CharField(max_length=100, default="7 Day")
-
+    join_date = models.DateTimeField(auto_now_add=True)
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name='vendor')
 
     def __str__(self):
         return self.title
+
+    def get_rating_percent(self):
+        return float((self.rating) / 5 * 100)
+
+    def get_address(self):
+        try:
+            # Assuming one address per user for simplicity
+            address = self.user.addresses.first()
+            return address
+        except Address.DoesNotExist:
+            return None
 
     class Meta:
         verbose_name_plural = "Vendors"
@@ -132,6 +144,7 @@ class Product(models.Model):
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     last_update = models.DateTimeField(auto_now=True)
+    rating = models.IntegerField(choices=RATING_CHOICES, default=3)
 
     vendor = models.ForeignKey(
         Vendor, on_delete=models.PROTECT, related_name="products")
@@ -142,6 +155,12 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_rating_percent(self):
+        return float(self.rating / 5) * 100
+
+    def get_discount_percent(self):
+        return int((self.regular_price - self.discount_price) / self.regular_price * 100)
 
     class Meta:
         verbose_name_plural = "Products"

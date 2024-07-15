@@ -47,9 +47,9 @@ class ProductAdmin(admin.ModelAdmin):
     }
     list_display = ['title', 'category_title', 'regular_price',
                     'discount_price', 'inventory',
-                    'publish_status', 'is_active', 'is_featured']
+                    'publish_status', 'is_active', 'is_featured', 'rating']
     list_editable = ['regular_price', 'discount_price',
-                     'inventory', 'publish_status', 'is_active', 'is_featured']
+                     'inventory', 'publish_status', 'rating', 'is_active', 'is_featured']
     list_filter = ['category', 'publish_status']
     list_select_related = ['category']
     search_fields = ['title']
