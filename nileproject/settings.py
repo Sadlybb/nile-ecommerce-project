@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'django_countries',
     'taggit',
+    'ckeditor',
+    'ckeditor_uploader',
     ##### Custom Apps####
     'core',
     'store',
@@ -152,3 +154,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 AUTH_USER_MODEL = 'userauth.User'
+
+
+################################################### CKEditor ###############################
+SILENCED_SYSTEM_CHECKS = ["ckeditor.W001"]
+
+CKEDITOR_UPLOAD_PATH = "uploads/"
+
+CKEDITOR_IMAGE_BACKEND = "pillow"
+CKEDITOR_CONFIGS = {
+    'default': {
+        'skin': 'moono',
+        'toolbar': 'all',
+        'extraPlugins': ','.join(
+            [
+                'widget',
+                'dialog',
+            ]
+        ),
+    },
+}

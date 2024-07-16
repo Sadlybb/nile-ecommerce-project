@@ -75,10 +75,11 @@ def category_product_list(request, pk):
 
 def product_detail(request, pk):
     product = Product.objects.prefetch_related('images').get(pk=pk)
-    categories = Category.objects.all()
+    related_products = Product.objects.filter(category=product.category)
 
     context = {
         "product": product,
+        "related_products": related_products,
     }
 
     return render(request, "store/product_detail.html", context=context)

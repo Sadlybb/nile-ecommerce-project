@@ -1,6 +1,7 @@
 from django.db import models
 from django_countries.fields import CountryField
 
+from ckeditor_uploader.fields import RichTextUploadingField
 from taggit.managers import TaggableManager
 
 from userauth.models import User
@@ -22,10 +23,12 @@ def user_directory_path(instance, filename):
 
 class Vendor(models.Model):
     title = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
+    short_description = models.CharField(
+        max_length=150, null=True, blank=True, default='-')
+    full_description = RichTextUploadingField(blank=True, default='-')
     phone_number = models.CharField(max_length=30, default="+989123456789")
     image = models.ImageField(
-        upload_to=user_directory_path, default="vendor.jpg", null=True, blank=True)
+        upload_to=user_directory_path, default="person.png", null=True, blank=True)
     rating = models.IntegerField(choices=RATING_CHOICES)
     chat_response_time = models.CharField(max_length=100, default="1 Day")
     shipping_time = models.CharField(max_length=100, default="1 Day")
@@ -67,7 +70,7 @@ class Customer(models.Model):
     phone_number = models.CharField(max_length=30, default="+989123456789")
     birth_date = models.DateField(null=True, blank=True)
     image = models.ImageField(
-        upload_to=user_directory_path, default="customer.jpg", null=True, blank=True)
+        upload_to=user_directory_path, default="person.png", null=True, blank=True)
     membership = models.CharField(
         max_length=1, choices=MEMBERSHIP_STATUS_CHOICES, default="B")
 
@@ -132,7 +135,10 @@ class Product(models.Model):
     ]
 
     title = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
+    short_description = models.CharField(
+        max_length=150, null=True, blank=True, default='-')
+    full_description = RichTextUploadingField(blank=True, default='-')
+    specifications = RichTextUploadingField(blank=True, default='-')
     slug = models.SlugField()
     sku = models.CharField(max_length=100)
     regular_price = models.DecimalField(
@@ -148,7 +154,7 @@ class Product(models.Model):
     last_update = models.DateTimeField(auto_now=True)
     rating = models.IntegerField(choices=RATING_CHOICES, default=3)
 
-    tags = TaggableManager()
+    tags = TaggableManager(blank=True)
 
     vendor = models.ForeignKey(
         Vendor, on_delete=models.PROTECT, related_name="products")
@@ -172,7 +178,7 @@ class Product(models.Model):
 
 class ProductImage(models.Model):
     image = models.ImageField(
-        upload_to="store/images/product", default="product.jpg")
+        upload_to="store/images/product", default="product.png")
 
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name="images")
@@ -246,7 +252,7 @@ class CartItem(models.Model):
 
 
 class Review(models.Model):
-    user_name = models.CharField(max_length=255, default="anonymus")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     title = models.CharField(max_length=255, default="Review Title")
     description = models.CharField(
         max_length=350, default="Review Description")

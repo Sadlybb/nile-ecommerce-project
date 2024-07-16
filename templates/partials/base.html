@@ -390,7 +390,7 @@
                                         {% endfor %}
                                     </ul>
                                     <ul class="end">
-                                        {% for category in categories|slice:"5:11" %}
+                                        {% for category in categories|slice:"5:10" %}
                                         <li>
                                             <a href="{ url 'store:category_product_list' category.pk }"> <img src="{{ category.image.url }}" alt="" />{{ category.title }}</a>
                                         </li>
@@ -399,20 +399,13 @@
                                 <div class="more_slide_open" style="display: none">
                                     <div class="d-flex categori-dropdown-inner">
                                         <ul>
-                                            {% for category in categories|slice:"11:16" %}
+                                            {% for category in categories|slice:"10:" %}
                                             <li>
                                                 <a href="{ url 'store:category_product_list' category.pk }"> <img src="{{ category.image.url }}" alt="" />{{ category.title }}</a>
                                             </li>
                                             {% endfor %}
                                         </ul>
-                                        <ul class="end">
-                                            <li>
-                                                {% for category in categories|slice:"16:21" %}
-                                                <li>
-                                                    <a href="{ url 'store:category_product_list' category.pk }"> <img src="{{ category.image.url }}" alt="" />{{ category.title }}</a>
-                                                </li>
-                                                {% endfor %}
-                                        </ul>
+                              
                                     </div>
                                 </div>
                                 <div class="more_categories"><span class="icon"></span> <span class="heading-sm-1">Show more...</span></div>

@@ -1,3 +1,4 @@
+from typing import Any
 from django.contrib import admin
 from django.urls import reverse
 from django.db.models import Count, Sum, F
@@ -12,10 +13,11 @@ from . models import Vendor, Customer, Address, Category, Product, ProductImage,
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
     readonly_fields = ['thumbnail']
+    extra = 1
 
     def thumbnail(self, instance):
         if instance.image.name != '':
-            return format_html(f'<img src="{instance.image.url}" class="thumbnail">')
+            return format_html(f'<img src="{instance.image.url}" width="150" height="150" class="thumbnail">')
         return ''
 
 
@@ -45,26 +47,38 @@ class ProductAdmin(admin.ModelAdmin):
     prepopulated_fields = {
         'slug': ['title'],
     }
+
     list_display = ['title', 'category_title', 'regular_price',
                     'discount_price', 'inventory',
                     'publish_status', 'is_active', 'is_featured', 'rating']
+    exclude = ['created_by']
     list_editable = ['regular_price', 'discount_price',
                      'inventory', 'publish_status', 'rating', 'is_active', 'is_featured']
     list_filter = ['category', 'publish_status']
     list_select_related = ['category']
     search_fields = ['title']
     list_per_page = 10
+
     inlines = [ProductImageInline]
 
     @admin.display(ordering='category')
     def category_title(self, product):
         return product.category.title
 
+    def save_model(self, request, obj, form, change):
+        obj.created_by = request.user
+        return super().save_model(request, obj, form, change)
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ['title', 'category_image', 'products_count']
+    exclude = ['created_by']
     search_fields = ['title']
+
+    def save_model(self, request, obj, form, change):
+        obj.created_by = request.user
+        return super().save_model(request, obj, form, change)
 
     def category_image(self, instance):
         return format_html(f"<img src='{instance.image.url}' width='50' height='50'/>")
@@ -196,7 +210,7 @@ class CartItemAdmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class ProductReviewAdmin(admin.ModelAdmin):
-    list_display = ['user_name', 'title', 'posted_at', 'short_desc']
+    list_display = ['user', 'title', 'posted_at', 'short_desc']
     list_per_page = 10
 
     def short_desc(self, review: Review):
