@@ -8,7 +8,6 @@ from userauth.models import User
 
 
 RATING_CHOICES = (
-    (0, '☆☆☆☆☆'),
     (1, '★☆☆☆☆'),
     (2, '★★☆☆☆'),
     (3, '★★★☆☆'),
@@ -254,9 +253,12 @@ class CartItem(models.Model):
 class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     title = models.CharField(max_length=255, default="Review Title")
-    description = models.CharField(
-        max_length=350, default="Review Description")
+    description = models.TextField()
     posted_at = models.DateTimeField(auto_now_add=True)
 
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.IntegerField(choices=RATING_CHOICES, default=1)
+
+    def get_rating_percent(self):
+        return float((self.rating)/5*100)

@@ -25,4 +25,7 @@ urlpatterns = [
 
     #####   Tags  ######
     path('products/tag/<slug:tag_slug>/', views.tag_product_list, name='tags'),
+
+    #####   Add Review  ######
+    path('ajax-add-review/<pk>/', views.ajax_add_review, name='ajax_add_review'),
 ]
