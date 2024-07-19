@@ -19,7 +19,7 @@ urlpatterns = [
     path('categories/<int:pk>', views.category_product_list,
          name='category_product_list'),
 
-    #####   Categories  ######
+    #####   Vendors  ######
     path('vendors/', views.vendor_list, name='vendor_list'),
     path('vendors/<int:pk>', views.vendor_detail, name='vendor_detail'),
 
@@ -28,4 +28,14 @@ urlpatterns = [
 
     #####   Add Review  ######
     path('ajax-add-review/<pk>/', views.ajax_add_review, name='ajax_add_review'),
+
+
+    path('search/', views.search_view, name='search'),
+
+
+    path('about/', views.about_us, name='about'),
+
+    path('filter-products/', views.filter_product, name='filter-product'),
+
+
 ]

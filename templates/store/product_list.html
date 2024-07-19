@@ -1,17 +1,49 @@
 {% extends 'partials/base.html' %}
+
 {% load static %}
+
+{% block title %}
+Products list
+{% endblock title %}
 
 {% block content %}
 
+
+<head>
+    <style>
+        input[type="range"] {
+            -webkit-appearance: none;
+            margin-right: 15px;
+            height: 7px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 5px;
+            background-image: linear-gradient(#3bb77e,#3bb77e);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+
+        }
+
+        input[type="range"]::-webkit-slider-thumb{
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3bb77e;
+            cursor: ew-resize;
+            box-shadow: 0 0 2px 0 #555;
+            transition: background .3s ease-in-out;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            -webkit-appearance: none;
+            box-shadow: none;
+            border: none;
+            background: transparent;
+        }
+
+    </style>
+</head>
     <main class="main">
-        <div class="page-header breadcrumb-wrap">
-            <div class="container">
-                <div class="breadcrumb">
-                    <a href="{% url 'store:homepage'  %}" rel="nofollow"><i class="fi-rs-home mr-5"></i>Home</a>
-                    <span></span> Shop <span></span> Fillter
-                </div>
-            </div>
-        </div>
         <div class="container mb-30 mt-30">
             <div class="row">
                 <div class="col-lg-12">
@@ -23,17 +55,21 @@
                     </a>
                     <div class="shop-product-fillter-header">
                         <div class="row">
+                          
                             <div class="col-xl-3 col-lg-6 col-md-6 mb-lg-0 mb-md-2 mb-sm-2">
                                 <div class="card">
-                                    <h5 class="mb-30">By Categories</h5>
-                                    <div class="categories-dropdown-wrap font-heading">
-                                        <ul>
+                                    <h5 class="mb-30">By Category</h5>
+                                    <div class="d-flex">
+                                        <div class="checkbox mr-80">
                                             {% for category in categories %}
-                                            <li>
-                                                <a href="{% url 'store:category_product_list' category.pk  %}"> <img src="{{ category.image.url }}" alt="" />{{ category.title }}</a>
-                                            </li>
+                                            <input class="form-check-input filter-checkbox" data-filter="category" type="checkbox" name="checkbox" id="category-id{{ category.id }}" value="{{ category.id }}" />
+                                            <label class="form-check-label" for="category-id{{ category.id }}"><span>{{ category.title }}</span></label>
+                                            <br />
                                             {% endfor %}
-                                        </ul>
+                          
+                                        </div>
+                                        
+                                        
                                     </div>
                                 </div>
                             </div>
@@ -41,49 +77,12 @@
                                 <div class="card">
                                     <h5 class="mb-30">By Vendors</h5>
                                     <div class="d-flex">
-                                        <div class="custome-checkbox mr-80">
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox1" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox1"><span>Aldi</span></label>
+                                        <div class="checkbox mr-80">
+                                            {% for vendor in vendors|slice:":20" %}
+                                            <input class="form-check-input filter-checkbox" data-filter="vendor" type="checkbox" name="checkbox" id="vendor-id{{ vendor.id }}" value="{{ vendor.id }}" />
+                                            <label class="form-check-label" for="vendor-id{{ vendor.id }}"><span>{{ vendor.title }}</span></label>
                                             <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox2" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox2"><span>Adidas</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox3" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox3"><span>Burbe</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox4" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox4"><span>Chanel</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox5" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox5"><span>Prada</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox6" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox6"><span>Kroger</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox7" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox7"><span>Traders</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox8" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox8"><span>Publix</span></label>
-                                        </div>
-                                        <div class="custome-checkbox">
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox11" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox11"><span>Harris</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox21" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox21"><span>Costco</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox31" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox31"><span>Targets</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox41" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox41"><span>Green Tea</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox51" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox51"><span>iSnack</span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox61" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox61"><span>Pambox</span></label>
+                                            {% endfor %}
                                         </div>
                                     </div>
                                 </div>
@@ -93,27 +92,11 @@
                                     <h5 class="mb-30">By Tags</h5>
                                     <div class="sidebar-widget widget-tags">
                                         <ul class="tags-list">
+                                            {% for tag in tags|slice:":5" %}
                                             <li class="hover-up">
-                                                <a href="blog-category-grid.html"><i class="fi-rs-cross mr-10"></i>Milk</a>
+                                                <a href="{% url 'store:tags' tag.slug %}"><i class="fi-rs-cross mr-10"></i>{{ tag.name }}</a>
                                             </li>
-                                            <li class="hover-up">
-                                                <a href="blog-category-grid.html"><i class="fi-rs-cross mr-10"></i>Broccoli</a>
-                                            </li>
-                                            <li class="hover-up">
-                                                <a href="blog-category-grid.html"><i class="fi-rs-cross mr-10"></i>Smoothie</a>
-                                            </li>
-                                            <li class="hover-up">
-                                                <a href="blog-category-grid.html"><i class="fi-rs-cross mr-10"></i>Fruit</a>
-                                            </li>
-                                            <li class="hover-up mr-0">
-                                                <a href="blog-category-grid.html"><i class="fi-rs-cross mr-10"></i>Salad</a>
-                                            </li>
-                                            <li class="hover-up mr-0">
-                                                <a href="blog-category-grid.html"><i class="fi-rs-cross mr-10"></i>Appetizer</a>
-                                            </li>
-                                            <li class="hover-up mr-0 mb-0">
-                                                <a href="blog-category-grid.html"><i class="fi-rs-cross mr-10"></i>Appetizer</a>
-                                            </li>
+                                            {% endfor %}
                                         </ul>
                                     </div>
                                 </div>
@@ -124,28 +107,21 @@
                                     <div class="sidebar-widget price_range range">
                                         <div class="price-filter mb-20">
                                             <div class="price-filter-inner">
-                                                <div id="slider-range" class="mb-20"></div>
+                                                <!-- <div id="slider-range" class="mb-20"></div> -->
+
+
+                                                 <input type="range" name="range" value="{{ min_max_price.discount_price__min|floatformat:"2" }}"  id="range"  min="{{ min_max_price.discount_price__min|floatformat:"0" }}", max="{{ min_max_price.discount_price__max|floatformat:"0" }}", oninput="max_discount_price.value=this.value">
+
+
                                                 <div class="d-flex justify-content-between">
-                                                    <div class="caption">From: <strong id="slider-range-value1" class="text-brand"></strong></div>
-                                                    <div class="caption">To: <strong id="slider-range-value2" class="text-brand"></strong></div>
+                                                    <div class="caption">From: ${{ min_max_price.discount_price__min|floatformat:"2" }}<strong id="slider-range-value1" class="text-brand"></strong></div>
+                                                    <div class="caption">To: ${{ min_max_price.discount_price__max|floatformat:"2" }} <strong id="slider-range-value2" class="text-brand"></strong></div>
                                                 </div>
-                                            </div>
+                                                <input type="number" value="{{ min_max_price.discount_price__min|floatformat:"2" }}"  id="max_discount_price" min="{{ min_max_price.discount_price__min|floatformat:"0" }}", max="{{ min_max_price.discount_price__max|floatformat:"0" }}" placeholder="current price" onkeyup="range.value=this.value">
+                                            </div>  
                                         </div>
                                         <div class="custome-checkbox">
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox211" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox211"><span>$0.00 - $20.00 </span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox22" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox22"><span>$20.00 - $40.00 </span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox23" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox23"><span>$40.00 - $60.00 </span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox24" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox24"><span>$60.00 - $80.00 </span></label>
-                                            <br />
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="exampleCheckbox25" value="" />
-                                            <label class="form-check-label" for="exampleCheckbox25"><span>Over $100.00</span></label>
+                                          <button class="btn mt-20 w-100" type="button" id="price-filter-btn">Filter</button>
                                         </div>
                                     </div>
                                 </div>
@@ -153,10 +129,15 @@
                         </div>
                     </div>
                 </div>
+
+            </div>
+        </div>
+        <div class="container mb-30">
+            <div class="row">
                 <div class="col-12">
                     <div class="shop-product-fillter">
                         <div class="totall-product">
-                            <p>We found <strong class="text-brand">29</strong> items for you!</p>
+                            
                         </div>
                         <div class="sort-by-product-area">
                             <div class="sort-by-cover mr-10">
@@ -199,15 +180,16 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row product-grid">
+                    <div class="row product-grid" id="filtered-products">
+
                         {% for product in products %}
                         <div class="col-lg-1-5 col-md-4 col-12 col-sm-6">
                             <div class="product-cart-wrap mb-30">
                                 <div class="product-img-action-wrap">
                                     <div class="product-img product-img-zoom">
-                                        <a href="{% url 'store:product_detail' product.pk %}">
-                                            <img class="default-img" src="{{ product.images.all.0.image.url }}" alt="product image" />
-                                            <img class="hover-img" src="{{ product.images.all.1.image.url }}" alt="product image" />
+                                        <a href="{% url 'store:product_detail' product.id %}">
+                                            <img class="default-img" src="{{ product.images.all.0.image.url }}" alt="" />
+                                            <img class="hover-img" src="{{ product.images.all.1.image.url }}" alt="" />
                                         </a>
                                     </div>
                                     <div class="product-action-1">
@@ -215,23 +197,23 @@
                                         <a aria-label="Compare" class="action-btn" href="shop-compare.html"><i class="fi-rs-shuffle"></i></a>
                                         <a aria-label="Quick view" class="action-btn" data-bs-toggle="modal" data-bs-target="#quickViewModal"><i class="fi-rs-eye"></i></a>
                                     </div>
-                                          <div class="product-badges product-badges-position product-badges-mrg">
-                                            <span class="hot">-{{ product.get_discount_percent }}%</span>
-                                        </div>
+                                    <div class="product-badges product-badges-position product-badges-mrg">
+                                        <span class="hot">-{{ product.get_discount_percent }}%</span>
+                                    </div>
                                 </div>
                                 <div class="product-content-wrap">
                                     <div class="product-category">
-                                        <a href="{% url 'store:category_product_list' product.category.id %}">{{ product.category.title }}</a>
+                                        <a href="{{ product.category.id }}">{{ product.category.title }}</a>
                                     </div>
-                                    <h2><a href="#">{{ product.title }}</a></h2>
+                                    <h2><a href="{% url 'store:product_detail' product.id %}">{{ product.title }}</a></h2>
                                     <div class="product-rate-cover">
                                         <div class="product-rate d-inline-block">
                                             <div class="product-rating" style="width: {{ product.get_rating_percent }}%"></div>
                                         </div>
-                                        <span class="font-small ml-5 text-muted"> ({{ product.rating }})</span>
+                                        <span class="font-small ml-5 text-muted"> ({{product.rating}})</span>
                                     </div>
                                     <div>
-                                        <span class="font-small text-muted">By <a href="{% url 'store:vendor_detail' product.vendor.id %}">{{ product.vendor }}</a></span>
+                                        <span class="font-small text-muted">By <a href="{% url 'store:vendor_detail' product.vendor.id %}">{{ product.vendor.title }}</a></span>
                                     </div>
                                     <div class="product-card-bottom">
                                         <div class="product-price">
@@ -249,23 +231,7 @@
                         {% endfor %}
                     </div>
                     <!--product grid-->
-                    <!-- <div class="pagination-area mt-20 mb-20">
-                        <nav aria-label="Page navigation example">
-                            <ul class="pagination justify-content-start">
-                                <li class="page-item">
-                                    <a class="page-link" href="#"><i class="fi-rs-arrow-small-left"></i></a>
-                                </li>
-                                <li class="page-item"><a class="page-link" href="#">1</a></li>
-                                <li class="page-item active"><a class="page-link" href="#">2</a></li>
-                                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                <li class="page-item"><a class="page-link dot" href="#">...</a></li>
-                                <li class="page-item"><a class="page-link" href="#">6</a></li>
-                                <li class="page-item">
-                                    <a class="page-link" href="#"><i class="fi-rs-arrow-small-right"></i></a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div> -->
+
                     <section class="section-padding pb-5">
                         <div class="section-title">
                             <h3 class="">Deals Of The Day</h3>
@@ -430,8 +396,6 @@
             </div>
         </div>
     </main>
-    
+  
 
 {% endblock content %}
-
-

@@ -3,7 +3,7 @@
 {% load static %}
 
 {% block title %}
-        Category:{{selected_category.title}}
+Search Page
 {% endblock title %}
 
 {% block content %}
@@ -14,10 +14,10 @@
                 <div class="archive-header">
                     <div class="row align-items-center">
                         <div class="col-xl-3">
-                            <h3 class="mb-15">Category: {{ selected_category.title }}</h3>
+                            <h3 class="mb-15">Search for: {{ query }}</h3>
                             <div class="breadcrumb">
                                 <a href="{% url 'store:homepage' %}" rel="nofollow"><i class="fi-rs-home mr-5"></i>Home</a>
-                                <span></span> Category <span></span> {{ selected_category.title }}
+                                <span></span> Shop <span></span> search: {{ query }}
                             </div>
                         </div>
                         <div class="col-xl-9 text-end d-none d-xl-block">

@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.db.models import Q, Count, Avg
+from django.template.loader import render_to_string
 
 from taggit.models import Tag
 
@@ -57,7 +58,7 @@ def category_list(request):
 
 
 def category_product_list(request, pk):
-    category = Category.objects.get(pk=pk)
+    selected_category = Category.objects.get(pk=pk)
     products_in_category = Product.objects.prefetch_related("images") \
         .select_related('category') \
         .select_related("vendor") \
@@ -65,11 +66,11 @@ def category_product_list(request, pk):
         .annotate(
             orders_count=Count('orders')
     ) \
-        .filter(publish_status="P", category=category) \
+        .filter(publish_status="P", category=selected_category) \
         .order_by("-orders_count")
 
     context = {
-        "category": category,
+        "selected_category": selected_category,
         "products": products_in_category,
     }
     return render(request, 'store/category_product_list.html', context=context)
@@ -208,3 +209,47 @@ def ajax_add_review(request, pk):
             'avg_rating': avg_rating,
         }
     )
+
+
+def search_view(request):
+    query = request.GET.get("query")
+
+    products = Product.objects.filter(title__icontains=query)
+
+    context = {
+        'products': products,
+        'query': query,
+    }
+
+    return render(request, 'store/search.html', context=context)
+
+
+def about_us(request):
+    return render(request, 'store/about_us.html')
+
+
+def filter_product(request):
+    categories = request.GET.getlist("category[]")
+    vendors = request.GET.getlist("vendor[]")
+    products = Product.objects.filter(
+        publish_status="P").order_by("-id").distinct()
+
+    min_price = request.GET['min_price']
+    max_price = request.GET['max_price']
+
+    products = products.filter(discount_price__gte=min_price)
+    products = products.filter(discount_price__lte=max_price)
+
+    if len(categories) > 0:
+        products = products.filter(category__id__in=categories).distinct()
+
+    if len(vendors) > 0:
+        products = products.filter(vendor__id__in=vendors).distinct()
+
+    context = {
+        'products': products
+    }
+
+    data = render_to_string("store/async/product_list.html", context=context)
+
+    return JsonResponse({'data': data})
