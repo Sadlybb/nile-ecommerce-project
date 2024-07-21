@@ -1,12 +1,15 @@
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Q, Count, Avg
 from django.template.loader import render_to_string
+from django.contrib import messages
 
 from taggit.models import Tag
 
 from . models import Vendor, Category, Product, Review
 from . forms import ReviewForm
+
+# --------------------------------------------------------------------------Home Page view-----------------------------------------------------------------
 
 
 def homepage(request):
@@ -25,21 +28,7 @@ def homepage(request):
     }
     return render(request, 'store/homepage.html', context=context)
 
-
-def product_list(request):
-    all_products = Product.objects.prefetch_related("images") \
-        .select_related('category') \
-        .select_related("vendor") \
-        .all() \
-        .annotate(
-            orders_count=Count('orders')) \
-        .filter(publish_status="P") \
-        .order_by("-orders_count")
-
-    context = {
-        "products": all_products,
-    }
-    return render(request, 'store/product_list.html', context=context)
+# --------------------------------------------------------------------------Categories-----------------------------------------------------------------
 
 
 def category_list(request):
@@ -74,6 +63,23 @@ def category_product_list(request, pk):
         "products": products_in_category,
     }
     return render(request, 'store/category_product_list.html', context=context)
+
+
+# --------------------------------------------------------------------------Products-----------------------------------------------------------------
+def product_list(request):
+    all_products = Product.objects.prefetch_related("images") \
+        .select_related('category') \
+        .select_related("vendor") \
+        .all() \
+        .annotate(
+            orders_count=Count('orders')) \
+        .filter(publish_status="P") \
+        .order_by("-orders_count")
+
+    context = {
+        "products": all_products,
+    }
+    return render(request, 'store/product_list.html', context=context)
 
 
 def product_detail(request, pk):
@@ -127,6 +133,7 @@ def product_detail(request, pk):
     return render(request, "store/product_detail.html", context=context)
 
 
+# --------------------------------------------------------------------------Vendors-----------------------------------------------------------------
 def vendor_list(request):
 
     vendors = Vendor.objects \
@@ -161,6 +168,8 @@ def vendor_detail(request, pk):
     return render(request, 'store/vendor_detail.html', context=context)
 
 
+# --------------------------------------------------------------------------Tag-----------------------------------------------------------------
+
 def tag_product_list(request, tag_slug=None):
     tag = None
 
@@ -179,6 +188,7 @@ def tag_product_list(request, tag_slug=None):
     return render(request, 'store/tag_product_list.html', context=context)
 
 
+# --------------------------------------------------------------------------Review-----------------------------------------------------------------
 def ajax_add_review(request, pk):
     product = Product.objects.get(pk=pk)
     user = request.user
@@ -211,6 +221,7 @@ def ajax_add_review(request, pk):
     )
 
 
+# --------------------------------------------------------------------------Search-----------------------------------------------------------------
 def search_view(request):
     query = request.GET.get("query")
 
@@ -224,10 +235,7 @@ def search_view(request):
     return render(request, 'store/search.html', context=context)
 
 
-def about_us(request):
-    return render(request, 'store/about_us.html')
-
-
+# --------------------------------------------------------------------------Filters-----------------------------------------------------------------
 def filter_product(request):
     categories = request.GET.getlist("category[]")
     vendors = request.GET.getlist("vendor[]")
@@ -253,3 +261,109 @@ def filter_product(request):
     data = render_to_string("store/async/product_list.html", context=context)
 
     return JsonResponse({'data': data})
+
+
+# --------------------------------------------------------------------------Cart-----------------------------------------------------------------
+def add_to_cart(request):
+    cart_product = {}
+
+    cart_product[str(request.GET['id'])] = {
+        'title': request.GET['title'],
+        'quantity': request.GET['quantity'],
+        'price': request.GET['price'],
+        'image': request.GET['image'],
+    }
+
+    if 'cart_data_obj' in request.session:
+        if str(request.GET['id']) in request.session['cart_data_obj']:
+            cart_data = request.session['cart_data_obj']
+            print(cart_product[str(request.GET['id'])])
+            cart_data[str(request.GET['id'])]['quantity'] = int(
+                cart_product[str(request.GET['id'])]['quantity'])
+            cart_data.update(cart_data)
+            request.session['cart_data_obj'] = cart_data
+
+        else:
+            cart_data = request.session['cart_data_obj']
+            cart_data.update(cart_product)
+            request.session['cart_data_obj'] = cart_data
+
+    else:
+        request.session['cart_data_obj'] = cart_product
+
+    return JsonResponse({"data": request.session['cart_data_obj'], 'totalcartitems': len(request.session['cart_data_obj'])})
+
+
+def cart_view(request):
+    cart_total_amount = 0
+
+    if 'cart_data_obj' in request.session:
+        for product_id, item in request.session['cart_data_obj'].items():
+            item['subtotal'] = int(item['quantity']) * float(item['price'])
+            cart_total_amount += item['subtotal']
+
+        context = {
+            'cart_data': request.session['cart_data_obj'],
+            'totalcartitems': len(request.session['cart_data_obj']),
+            'cart_total_amount': cart_total_amount
+        }
+
+        return render(request, "store/cart.html", context=context)
+
+    else:
+        messages.warning(request, 'You have no item in cart.')
+        return redirect('store:homepage')
+
+
+def delete_item_from_cart(request):
+
+    product_id = str(request.GET['id'])
+
+    if 'cart_data_obj' in request.session:
+        if product_id in request.session['cart_data_obj']:
+            cart_data = request.session['cart_data_obj']
+            del request.session['cart_data_obj'][product_id]
+            request.session['cart_data_obj'] = cart_data
+
+            cart_total_amount = 0
+            for product_id, item in request.session['cart_data_obj'].items():
+                item['subtotal'] = int(item['quantity']) * float(item['price'])
+                cart_total_amount += item['subtotal']
+    context = {
+        'cart_data': request.session['cart_data_obj'],
+        'totalcartitems': len(request.session['cart_data_obj']),
+        'cart_total_amount': cart_total_amount
+    }
+    data = render_to_string("store/async/cart_list.html", context=context)
+
+    return JsonResponse({"data": data, 'totalcartitems': len(request.session['cart_data_obj'])})
+
+
+def update_cart(request):
+
+    product_id = str(request.GET['id'])
+    product_quantity = request.GET['quantity']
+
+    if 'cart_data_obj' in request.session:
+        if product_id in request.session['cart_data_obj']:
+            cart_data = request.session['cart_data_obj']
+            cart_data[str(request.GET['id'])]['quantity'] = product_quantity
+            request.session['cart_data_obj'] = cart_data
+
+            cart_total_amount = 0
+            for product_id, item in request.session['cart_data_obj'].items():
+                item['subtotal'] = int(item['quantity']) * float(item['price'])
+                cart_total_amount += item['subtotal']
+    context = {
+        'cart_data': request.session['cart_data_obj'],
+        'totalcartitems': len(request.session['cart_data_obj']),
+        'cart_total_amount': cart_total_amount
+    }
+    data = render_to_string("store/async/cart_list.html", context=context)
+
+    return JsonResponse({"data": data, 'totalcartitems': len(request.session['cart_data_obj'])})
+
+
+# --------------------------------------------------------------------------About-----------------------------------------------------------------
+def about_us(request):
+    return render(request, 'store/about_us.html')
