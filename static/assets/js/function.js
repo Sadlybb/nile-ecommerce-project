@@ -131,14 +131,7 @@ $(document).ready(function(){
         let product_price = $(".current-product-price-" + index).text()
         let product_image = $(".product-image-" + index).val()
     
-    
-        console.log("This is", this_val);
-        console.log("Quantity:", quantity);
-        console.log("Id:",product_id);
-        console.log("Title:", product_title);
-        console.log("Price",product_price);
-        console.log("image",product_image);
-        console.log("index",index);
+
     
         $.ajax({
             url:'/add-to-cart',

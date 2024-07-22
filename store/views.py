@@ -367,3 +367,20 @@ def update_cart(request):
 # --------------------------------------------------------------------------About-----------------------------------------------------------------
 def about_us(request):
     return render(request, 'store/about_us.html')
+
+
+def checkout(request):
+
+    cart_total_amount = 0
+    if 'cart_data_obj' in request.session:
+        for product_id, item in request.session['cart_data_obj'].items():
+            item['subtotal'] = int(item['quantity']) * float(item['price'])
+            cart_total_amount += item['subtotal']
+
+        context = {
+            'cart_data': request.session['cart_data_obj'],
+            'totalcartitems': len(request.session['cart_data_obj']),
+            'cart_total_amount': cart_total_amount,
+
+        }
+        return render(request, 'store/checkout.html', context=context)

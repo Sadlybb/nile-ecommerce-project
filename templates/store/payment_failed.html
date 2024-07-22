@@ -1,0 +1,23 @@
+
+{% extends "partials/base.html" %}
+{% load static %}
+
+{% block title %}
+Checkout
+{% endblock title %}
+
+{% block content %}
+<div class="row justify-content-center" >
+        <div class="col-md-5">
+            <div class="message-box _success _failed" style="height: 500px;">
+                 <i class="fa fa-times-circle" aria-hidden="true"></i>
+                <h2> Your payment failed </h2>
+         <p>  Try again later </p> 
+     
+         <a id="invoice_download_btn" class="btn btn-lg btn-custom btn-download hover-up mt-40"> <img src="{% static 'assets/imgs/theme/icons/icon-download.svg' %}" alt="" /> Download </a>
+        </div> 
+    </div> 
+</div> 
+
+</div> 
+{% endblock content %}
