@@ -3,10 +3,13 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Q, Count, Avg
 from django.template.loader import render_to_string
 from django.contrib import messages
+from django.contrib.auth.signals import user_logged_in
+from django.dispatch import receiver
+
 
 from taggit.models import Tag
 
-from . models import Vendor, Category, Product, Review
+from . models import Vendor, Category, Product, Review, Cart, CartItem
 from . forms import ReviewForm
 
 # --------------------------------------------------------------------------Home Page view-----------------------------------------------------------------
@@ -16,11 +19,10 @@ def homepage(request):
     popular_products = Product.objects.prefetch_related("images") \
         .select_related('category') \
         .select_related("vendor") \
-        .all() \
+        .filter(is_active=True, publish_status="P", is_featured=True) \
         .annotate(
             orders_count=Count('orders')
     ) \
-        .filter(publish_status="P", is_featured=True) \
         .order_by("-orders_count")
 
     context = {
@@ -33,11 +35,9 @@ def homepage(request):
 
 def category_list(request):
     categories = Category.objects \
-        .prefetch_related('products') \
-        .all() \
         .annotate(
-            published_product_count=Count('products', filter=Q(
-                products__publish_status='P'))
+            published_product_count=Count('products', filter=Q(products__is_active=True,
+                                                               products__publish_status='P'))
         )
 
     context = {
@@ -51,11 +51,10 @@ def category_product_list(request, pk):
     products_in_category = Product.objects.prefetch_related("images") \
         .select_related('category') \
         .select_related("vendor") \
-        .all() \
+        .filter(is_active=True, publish_status="P", category=selected_category) \
         .annotate(
             orders_count=Count('orders')
     ) \
-        .filter(publish_status="P", category=selected_category) \
         .order_by("-orders_count")
 
     context = {
@@ -70,10 +69,9 @@ def product_list(request):
     all_products = Product.objects.prefetch_related("images") \
         .select_related('category') \
         .select_related("vendor") \
-        .all() \
+        .filter(is_active=True, publish_status="P") \
         .annotate(
             orders_count=Count('orders')) \
-        .filter(publish_status="P") \
         .order_by("-orders_count")
 
     context = {
@@ -86,27 +84,46 @@ def product_detail(request, pk):
     product = Product.objects \
         .prefetch_related('images') \
         .prefetch_related('reviews') \
+        .select_related('vendor') \
+        .select_related('vendor__user') \
+        .prefetch_related('vendor__user__addresses') \
         .get(pk=pk)
 
     related_products = Product.objects \
         .prefetch_related('images') \
-        .filter(category=product.category)
+        .filter(category=product.category)[:5]
 
+    #  Reviews-----------
 
-#  Reviews-----------
-    reviews = Review.objects.select_related(
-        'user').select_related('product').filter(product=product).order_by('-id')
+    # Query for reviews with related user and product data
+    reviews = Review.objects.select_related('user', 'product') \
+        .filter(product=product).order_by('-id')
 
     try:
-        review_rating_detail = reviews.aggregate(
-            avg_rating=Avg('rating'), count=Count('rating'))
-        review_rating_detail['avg_percent'] = review_rating_detail['avg_rating'] / 5 * 100
+        # Aggregate all rating data in a single query
+        review_aggregates = reviews.aggregate(
+            avg_rating=Avg('rating'),
+            count=Count('rating'),
+            count_1star=Count('rating', filter=Q(rating=1)),
+            count_2star=Count('rating', filter=Q(rating=2)),
+            count_3star=Count('rating', filter=Q(rating=3)),
+            count_4star=Count('rating', filter=Q(rating=4)),
+            count_5star=Count('rating', filter=Q(rating=5)),
+        )
 
+        # Calculate average percentage
+        review_rating_detail = {
+            'avg_rating': review_aggregates['avg_rating'],
+            'avg_percent': (review_aggregates['avg_rating'] / 5 * 100) if review_aggregates['avg_rating'] else 0,
+        }
+
+        # Calculate star percentages
         for i in range(1, 6):
             review_rating_detail[f"{i}star_percent"] = \
-                reviews.filter(rating=i).aggregate(count=Count('rating'))['count'] \
-                / review_rating_detail['count'] * 100
+                ((review_aggregates[f"count_{i}star"] / review_aggregates['count'] * 100)
+                 if review_aggregates['count'] else 0)
     except TypeError:
+        # Handle the case where there are no reviews
         review_rating_detail = {
             'avg_rating': 0,
             'avg_percent': 0,
@@ -117,8 +134,9 @@ def product_detail(request, pk):
             '5star_percent': 0,
         }
 
-# Review Form ----------------------
+# Now review_rating_detail contains all the required aggregated data
 
+    # Review Form ----------------------
     review_form = ReviewForm()
 
     context = {
@@ -138,6 +156,7 @@ def vendor_list(request):
 
     vendors = Vendor.objects \
         .prefetch_related('products') \
+        .select_related('user') \
         .prefetch_related('user__addresses') \
         .annotate(published_product_count=Count('products', filter=Q(products__publish_status='P'))) \
         .all()
@@ -150,14 +169,15 @@ def vendor_list(request):
 
 
 def vendor_detail(request, pk):
-    vendor = Vendor.objects.get(pk=pk)
+    vendor = Vendor.objects.select_related('user') \
+        .prefetch_related('user__addresses') \
+        .get(pk=pk)
+
     products_in_vendor = Product.objects.prefetch_related("images") \
         .select_related('category') \
         .select_related("vendor") \
         .all() \
-        .annotate(
-            orders_count=Count('orders')
-    ) \
+        .annotate(orders_count=Count('orders')) \
         .filter(publish_status="P", vendor=vendor) \
         .order_by("-orders_count")
 
@@ -176,6 +196,8 @@ def tag_product_list(request, tag_slug=None):
     if tag_slug:
         tag = get_object_or_404(Tag, slug=tag_slug)
         products = Product.objects \
+            .prefetch_related('images') \
+            .select_related('category', 'vendor') \
             .filter(publish_status="P") \
             .filter(tags__in=[tag]) \
             .order_by("-id")
@@ -225,7 +247,10 @@ def ajax_add_review(request, pk):
 def search_view(request):
     query = request.GET.get("query")
 
-    products = Product.objects.filter(title__icontains=query)
+    products = Product.objects \
+        .prefetch_related('images') \
+        .select_related('vendor', 'category') \
+        .filter(title__icontains=query)
 
     context = {
         'products': products,
@@ -239,8 +264,9 @@ def search_view(request):
 def filter_product(request):
     categories = request.GET.getlist("category[]")
     vendors = request.GET.getlist("vendor[]")
-    products = Product.objects.filter(
-        publish_status="P").order_by("-id").distinct()
+    products = Product.objects \
+        .filter(is_active=True, publish_status="P") \
+        .order_by("-id").distinct()
 
     min_price = request.GET['min_price']
     max_price = request.GET['max_price']
@@ -265,103 +291,225 @@ def filter_product(request):
 
 # --------------------------------------------------------------------------Cart-----------------------------------------------------------------
 def add_to_cart(request):
-    cart_product = {}
+    user = request.user
+    product_id = str(request.GET['id'])
+    quantity = int(request.GET['quantity'])
 
-    cart_product[str(request.GET['id'])] = {
-        'title': request.GET['title'],
-        'quantity': request.GET['quantity'],
-        'price': request.GET['price'],
-        'image': request.GET['image'],
-    }
+    if user.is_authenticated:
+        product = Product.objects.get(id=product_id)
+        user_cart = Cart.objects.get(user=user)
+        user_cart_items = CartItem.objects.filter(cart=user_cart)
 
-    if 'cart_data_obj' in request.session:
-        if str(request.GET['id']) in request.session['cart_data_obj']:
+        if user_cart_items.filter(product=product).exists():
+            pass
+        else:
+            CartItem.objects.create(
+                cart=user_cart, product=product, quantity=quantity)
+
+        cart_items = {}
+        user_cart_items = CartItem.objects.filter(cart=user_cart)
+        for item in user_cart_items:
+            cart_items[str(item.product.id)] = {
+                'title': str(item.product.title),
+                'quantity': int(item.quantity),
+                'price': float(item.product.discount_price),
+                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "   ",
+            }
+
+    else:
+        cart_product = {}
+
+        cart_product = {
+            product_id: {
+                'title': request.GET['title'],
+                'quantity': quantity,
+                'price': request.GET['price'],
+                'image': request.GET['image'],
+            }
+        }
+
+        if 'cart_data_obj' in request.session:
             cart_data = request.session['cart_data_obj']
-            print(cart_product[str(request.GET['id'])])
-            cart_data[str(request.GET['id'])]['quantity'] = int(
-                cart_product[str(request.GET['id'])]['quantity'])
-            cart_data.update(cart_data)
+
+            if product_id in cart_data:
+                cart_data[product_id]['quantity'] = cart_product[product_id]['quantity']
+
+            else:
+                cart_data.update(cart_product)
+
             request.session['cart_data_obj'] = cart_data
 
         else:
-            cart_data = request.session['cart_data_obj']
-            cart_data.update(cart_product)
-            request.session['cart_data_obj'] = cart_data
+            request.session['cart_data_obj'] = cart_product
 
-    else:
-        request.session['cart_data_obj'] = cart_product
+        cart_items = request.session['cart_data_obj']
 
-    return JsonResponse({"data": request.session['cart_data_obj'], 'totalcartitems': len(request.session['cart_data_obj'])})
+    cart_items_list = [
+        {
+            'id': product_id,
+            'title': item['title'],
+            'quantity': item['quantity'],
+            'price': item['price'],
+            'image': item['image']
+        }
+        for product_id, item in cart_items.items()
+    ]
+
+    cart_total_amount = 0
+    for product_id, item in cart_items.items():
+        item['subtotal'] = int(item['quantity']) * float(item['price'])
+        cart_total_amount += float(item['subtotal'])
+
+    total_cart_items = len(cart_items)
+    context = {
+        "data": cart_items,
+        "totalcartitems": total_cart_items,
+        "cartitems": cart_items_list,
+        "cart_total_amount": round(cart_total_amount, 2),
+    }
+
+    return JsonResponse(context)
 
 
 def cart_view(request):
+    user = request.user
     cart_total_amount = 0
+    cart_items = {}
 
-    if 'cart_data_obj' in request.session:
-        for product_id, item in request.session['cart_data_obj'].items():
-            item['subtotal'] = int(item['quantity']) * float(item['price'])
-            cart_total_amount += item['subtotal']
+    if user.is_authenticated:
+        user_cart = Cart.objects.get(user=user)
+        user_cart_items = CartItem.objects.filter(cart=user_cart)
 
-        context = {
-            'cart_data': request.session['cart_data_obj'],
-            'totalcartitems': len(request.session['cart_data_obj']),
-            'cart_total_amount': cart_total_amount
-        }
+        for item in user_cart_items:
+            cart_items[str(item.product.id)] = {
+                'title': str(item.product.title),
+                'quantity': int(item.quantity),
+                'price': float(item.product.discount_price),
+                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "",
+            }
 
-        return render(request, "store/cart.html", context=context)
-
+    elif 'cart_data_obj' in request.session:
+        cart_items = request.session['cart_data_obj']
     else:
         messages.warning(request, 'You have no item in cart.')
         return redirect('store:homepage')
 
+    for product_id, item in cart_items.items():
+        item['subtotal'] = int(item['quantity']) * float(item['price'])
+        cart_total_amount += item['subtotal']
 
-def delete_item_from_cart(request):
-
-    product_id = str(request.GET['id'])
-
-    if 'cart_data_obj' in request.session:
-        if product_id in request.session['cart_data_obj']:
-            cart_data = request.session['cart_data_obj']
-            del request.session['cart_data_obj'][product_id]
-            request.session['cart_data_obj'] = cart_data
-
-            cart_total_amount = 0
-            for product_id, item in request.session['cart_data_obj'].items():
-                item['subtotal'] = int(item['quantity']) * float(item['price'])
-                cart_total_amount += item['subtotal']
     context = {
-        'cart_data': request.session['cart_data_obj'],
-        'totalcartitems': len(request.session['cart_data_obj']),
+        'cart_data': cart_items,
+        'totalcartitems': len(cart_items),
         'cart_total_amount': cart_total_amount
     }
-    data = render_to_string("store/async/cart_list.html", context=context)
 
-    return JsonResponse({"data": data, 'totalcartitems': len(request.session['cart_data_obj'])})
+    return render(request, "store/cart.html", context=context)
+
+
+def delete_item_from_cart(request):
+    product_id = str(request.GET.get('id'))
+    user = request.user
+    cart_items = {}
+    cart_total_amount = 0
+
+    if user.is_authenticated:
+        user_cart = Cart.objects.get(user=user)
+        product = Product.objects.get(id=product_id)
+        user_cart_items = CartItem.objects.filter(cart=user_cart)
+        cart_item = user_cart_items.get(product=product)
+        cart_item.delete()
+        for item in user_cart_items:
+            cart_items[str(item.product.id)] = {
+                'title': str(item.product.title),
+                'quantity': int(item.quantity),
+                'price': float(item.product.discount_price),
+                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "-",
+            }
+
+    elif 'cart_data_obj' in request.session:
+        cart_items = request.session['cart_data_obj']
+
+        if product_id in cart_items:
+            del cart_items[product_id]
+            request.session['cart_data_obj'] = cart_items
+
+    data = render_to_string("store/async/cart_list.html", context=cart_items)
+    for product_id, item in cart_items.items():
+        item['subtotal'] = int(item['quantity']) * float(item['price'])
+        cart_total_amount += item['subtotal']
+
+    context = {
+        "data": data,
+        "totalcartitems": len(cart_items),
+        "cart_total_amount": round(cart_total_amount, 2),
+    }
+
+    return JsonResponse(context)
 
 
 def update_cart(request):
 
     product_id = str(request.GET['id'])
-    product_quantity = request.GET['quantity']
+    product_quantity = int(request.GET['quantity'])
+    user = request.user
+    cart_items = {}
+    cart_total_amount = 0
 
-    if 'cart_data_obj' in request.session:
-        if product_id in request.session['cart_data_obj']:
-            cart_data = request.session['cart_data_obj']
-            cart_data[str(request.GET['id'])]['quantity'] = product_quantity
-            request.session['cart_data_obj'] = cart_data
+    if user.is_authenticated:
+        user_cart = Cart.objects.get(user=user)
+        user_cart_items = CartItem.objects.filter(cart=user_cart)
+        product = Product.objects.get(id=product_id)
+        cart_item = user_cart_items.get(product=product)
+        cart_item.quantity = product_quantity
+        cart_item.save()
+        for item in user_cart_items:
+            cart_items[str(item.product.id)] = {
+                'title': str(item.product.title),
+                'quantity': int(item.quantity),
+                'price': float(item.product.discount_price),
+                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "-",
+            }
 
-            cart_total_amount = 0
-            for product_id, item in request.session['cart_data_obj'].items():
-                item['subtotal'] = int(item['quantity']) * float(item['price'])
-                cart_total_amount += item['subtotal']
+    elif 'cart_data_obj' in request.session:
+        cart_items = request.session['cart_data_obj']
+
+        if product_id in cart_items:
+            cart_items[product_id]['quantity'] = product_quantity
+            request.session['cart_data_obj'] = cart_items
+
+    data = render_to_string("store/async/cart_list.html", context=cart_items)
+    for product_id, item in cart_items.items():
+        item['subtotal'] = int(item['quantity']) * float(item['price'])
+        cart_total_amount += item['subtotal']
+
     context = {
-        'cart_data': request.session['cart_data_obj'],
-        'totalcartitems': len(request.session['cart_data_obj']),
-        'cart_total_amount': cart_total_amount
+        "data": data,
+        "totalcartitems": len(cart_items),
+        "cart_total_amount": round(cart_total_amount, 2),
     }
-    data = render_to_string("store/async/cart_list.html", context=context)
 
-    return JsonResponse({"data": data, 'totalcartitems': len(request.session['cart_data_obj'])})
+    return JsonResponse(context)
+
+
+@receiver(user_logged_in)
+def transfer_cart(sender, request, user, **kwargs):
+    user_has_cart = Cart.objects.filter(user=user).exists()
+
+    if user_has_cart:
+        pass
+
+    else:
+
+        session_cart = request.session.get('cart_data_obj', {})
+        if session_cart:
+            user_cart = Cart.objects.create(user=user)
+            for product_id, item in session_cart.items():
+                product = Product.objects.get(id=product_id)
+                cart_item, created = CartItem.objects.get_or_create(
+                    cart=user_cart, product=product)
+                cart_item.quantity = item['quantity']
+                cart_item.save()
 
 
 # --------------------------------------------------------------------------About-----------------------------------------------------------------

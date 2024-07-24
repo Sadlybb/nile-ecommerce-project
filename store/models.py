@@ -44,12 +44,12 @@ class Vendor(models.Model):
         return float((self.rating) / 5 * 100)
 
     def get_address(self):
-        try:
-            # Assuming one address per user for simplicity
-            address = self.user.addresses.first()
-            return address
-        except Address.DoesNotExist:
-            return None
+        if hasattr(self.user, 'addresses'):
+            # If addresses are prefetched, use them directly
+            return self.user.addresses.all()[0] if self.user.addresses.exists() else None
+        else:
+            # Fallback to querying if addresses are not prefetched
+            return self.user.addresses.first()
 
     class Meta:
         verbose_name_plural = "Vendors"
@@ -229,22 +229,26 @@ class OrderItem(models.Model):
 
 
 class Cart(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="cart", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Cart {self.id} for User {self.user.username if self.user else 'Anonymous'}"
 
     class Meta:
         verbose_name_plural = "Carts"
 
 
 class CartItem(models.Model):
-    quantity = models.PositiveIntegerField(default=1)
-
     cart = models.ForeignKey(
         Cart, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="carts")\
-
+    product = models.ForeignKey(
+        'Product', on_delete=models.CASCADE, related_name="cart_items")
+    quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return f"{self.cart.id} - {self.product} - {self.quantity}"
+        return f"{self.quantity} x {self.product.title} in Cart {self.cart.id}"
 
     class Meta:
         verbose_name_plural = "Cart Items"
