@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.db.models import Count, Sum, F
 from django.utils.html import format_html, urlencode
-from . models import Vendor, Customer, Address, Category, Product, ProductImage, Order, OrderItem, Cart, CartItem, Review
+from . models import Vendor, Customer, Address, Category, Product, ProductImage, Order, OrderItem, Cart, CartItem, Review, Shipment
 
 #########################      Inlines      #########################
 #########################      Inlines      #########################
@@ -215,3 +215,8 @@ class ProductReviewAdmin(admin.ModelAdmin):
 
     def short_desc(self, review: Review):
         return review.description[:30]
+
+
+@admin.register(Shipment)
+class ShipmentAdmin(admin.ModelAdmin):
+    list_display = ['order', 'address', 'status', 'updated_at']

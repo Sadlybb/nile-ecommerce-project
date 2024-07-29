@@ -32,8 +32,8 @@
                                 <div class="row">
                                     <div class="col-sm-6">
                                         <div class="invoice-numb">
-                                            <h4 class="invoice-header-1 mb-10 mt-20">Invoice No: <span class="text-brand">#1970191</span></h4>
-                                            <h6 class="">Date: 30 Nov 2022</h6>
+                                            <h4 class="invoice-header-1 mb-10 mt-20">Invoice No: <span class="text-brand">#{{ order.id }}</span></h4>
+                                            <h6 class="">Date: {{ order.last_update }}</h6>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
@@ -52,13 +52,13 @@
                                         <div class="invoice-number">
                                             <h4 class="invoice-title-1 mb-10">Invoice To</h4>
                                             <p class="invoice-addr-1">
-                                                <strong>AliThemes Pty Ltd</strong> <br />
+                                                <strong>{{ order.customer }}</strong> <br />
                                                 contactalithemes.com <br />
                                                 PO Box 16122, Collins Street West, <br />Australia
                                             </p>
                                         </div>
                                     </div>
-                                    <div class="col-lg-3 col-md-6">
+                                    <!-- <div class="col-lg-3 col-md-6">
                                         <div class="invoice-number">
                                             <h4 class="invoice-title-1 mb-10">Bill To</h4>
                                             <p class="invoice-addr-1">
@@ -67,7 +67,7 @@
                                                 205 North Michigan Avenue, <br />Suite 810 Chicago, 60601, USA
                                             </p>
                                         </div>
-                                    </div>
+                                    </div> -->
                                 </div>
                                 <div class="row mt-2">
                                     <div class="col-lg-9 col-md-6">
@@ -92,61 +92,23 @@
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            {% for item in order_items %}
                                             <tr>
                                                 <td>
                                                     <div class="item-desc-1">
-                                                        <span>Field Roast Chao Cheese Creamy Original</span>
-                                                        <small>SKU: FWM15VKT</small>
+                                                        <span>{{ item.product.title }}</span>
+                                                        <small>SKU: {{ item.product.sku }}</small>
                                                     </div>
                                                 </td>
-                                                <td class="text-center">$10.99</td>
-                                                <td class="text-center">1</td>
-                                                <td class="text-right">$10.99</td>
+                                                <td class="text-center">${{ item.unit_price }}</td>
+                                                <td class="text-center">{{ item.quantity }}</td>
+                                                <td class="text-right">${{ item.subtotal|floatformat:2 }}</td>
                                             </tr>
-                                            <tr>
-                                                <td>
-                                                    <div class="item-desc-1">
-                                                        <span>Blue Diamond Almonds Lightly Salted</span>
-                                                        <small>SKU: FWM15VKT</small>
-                                                    </div>
-                                                </td>
-                                                <td class="text-center">$20.00</td>
-                                                <td class="text-center">3</td>
-                                                <td class="text-right">$60.00</td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div class="item-desc-1">
-                                                        <span>Fresh Organic Mustard Leaves Bell Pepper</span>
-                                                        <small>SKU: KVM15VK</small>
-                                                    </div>
-                                                </td>
-                                                <td class="text-center">$640.00</td>
-                                                <td class="text-center">1</td>
-                                                <td class="text-right">$640.00</td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div class="item-desc-1">
-                                                        <span>All Natural Italian-Style Chicken Meatballs</span>
-                                                        <small>SKU: 98HFG</small>
-                                                    </div>
-                                                </td>
-                                                <td class="text-center">$240.00</td>
-                                                <td class="text-center">1</td>
-                                                <td class="text-right">$240.00</td>
-                                            </tr>
-                                            <tr>
-                                                <td colspan="3" class="text-end f-w-600">SubTotal</td>
-                                                <td class="text-right">$1710.99</td>
-                                            </tr>
-                                            <tr>
-                                                <td colspan="3" class="text-end f-w-600">Tax</td>
-                                                <td class="text-right">$85.99</td>
-                                            </tr>
+                                            {% endfor %}
+
                                             <tr>
                                                 <td colspan="3" class="text-end f-w-600">Grand Total</td>
-                                                <td class="text-right f-w-600">$1795.99</td>
+                                                <td class="text-right f-w-600">${{ order_total_price|floatformat:2 }}</td>
                                             </tr>
                                         </tbody>
                                     </table>

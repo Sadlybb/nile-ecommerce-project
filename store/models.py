@@ -206,7 +206,7 @@ class Order(models.Model):
         Customer, on_delete=models.PROTECT, related_name="orders")
 
     def __str__(self) -> str:
-        return f"{self.customer} - {self.updated_at} - {self.payment_status}"
+        return f"{self.customer} - {self.last_update} - {self.payment_status}"
 
     class Meta:
         verbose_name_plural = "Orders"
@@ -266,3 +266,27 @@ class Review(models.Model):
 
     def get_rating_percent(self):
         return float((self.rating)/5*100)
+
+
+class Shipment(models.Model):
+
+    SHIPMENT_STATUS_PENDING = "P"
+    SHIPMENT_STATUS_SHIPPED = "S"
+    SHIPMENT_STATUS_DELIVERD = "D"
+
+    SHIPMENT_STATUS_CHOICES = {
+        SHIPMENT_STATUS_PENDING: "Pending",
+        SHIPMENT_STATUS_SHIPPED: "Shipped",
+        SHIPMENT_STATUS_DELIVERD: "Delivered",
+    }
+
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name="shipments")
+    address = models.ForeignKey(
+        Address, on_delete=models.CASCADE, related_name="shipments")
+    status = models.CharField(max_length=1, choices=SHIPMENT_STATUS_CHOICES)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Shipments"

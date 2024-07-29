@@ -47,4 +47,11 @@ urlpatterns = [
 
 
     path('checkout/', views.checkout, name='checkout'),
+
+
+    path('customer-dashboard/', views.customer_dashboard,
+         name="customer-dashboard"),
+
+    path('place-order/', views.place_order, name="place-order"),
+    path('zarinpal-verify/', views.zarinpal_verify, name='zarinpal-verify'),
 ]

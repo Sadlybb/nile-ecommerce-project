@@ -1,17 +1,34 @@
+import requests
+import json
+
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
-from django.db.models import Q, Count, Avg
+from django.db.models import Q, Count, Avg, F
 from django.template.loader import render_to_string
 from django.contrib import messages
 from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
-
+from django.conf import settings
 
 from taggit.models import Tag
 
-from . models import Vendor, Category, Product, Review, Cart, CartItem
+from . models import Vendor, Category, Product, Review, Cart, CartItem, Customer, Order, OrderItem
 from . forms import ReviewForm
 
+
+if settings.SANDBOX:
+    sandbox = 'sandbox'
+else:
+    sandbox = 'www'
+
+
+ZP_API_REQUEST = \
+    f"https://{sandbox}.zarinpal.com/pg/rest/WebGate/PaymentRequest.json"
+
+ZP_API_VERIFY = \
+    f"https://{sandbox}.zarinpal.com/pg/rest/WebGate/PaymentVerification.json"
+
+ZP_API_STARTPAY = f"https://{sandbox}.zarinpal.com/pg/StartPay/"
 # --------------------------------------------------------------------------Home Page view-----------------------------------------------------------------
 
 
@@ -313,7 +330,7 @@ def add_to_cart(request):
                 'title': str(item.product.title),
                 'quantity': int(item.quantity),
                 'price': float(item.product.discount_price),
-                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "   ",
+                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "",
             }
 
     else:
@@ -424,7 +441,7 @@ def delete_item_from_cart(request):
                 'title': str(item.product.title),
                 'quantity': int(item.quantity),
                 'price': float(item.product.discount_price),
-                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "-",
+                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "",
             }
 
     elif 'cart_data_obj' in request.session:
@@ -468,7 +485,7 @@ def update_cart(request):
                 'title': str(item.product.title),
                 'quantity': int(item.quantity),
                 'price': float(item.product.discount_price),
-                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "-",
+                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "",
             }
 
     elif 'cart_data_obj' in request.session:
@@ -518,17 +535,141 @@ def about_us(request):
 
 
 def checkout(request):
+    user = request.user
 
-    cart_total_amount = 0
-    if 'cart_data_obj' in request.session:
-        for product_id, item in request.session['cart_data_obj'].items():
+    if user.is_authenticated:
+        cart = Cart.objects.get(user=user)
+        user_cart_items = CartItem.objects.filter(cart=cart)
+
+        cart_items = {}
+        for item in user_cart_items:
+            cart_items[str(item.product.id)] = {
+                'title': str(item.product.title),
+                'quantity': int(item.quantity),
+                'price': float(item.product.discount_price),
+                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "",
+            }
+
+        cart_total_amount = 0
+        for product_id, item in cart_items.items():
             item['subtotal'] = int(item['quantity']) * float(item['price'])
             cart_total_amount += item['subtotal']
 
         context = {
-            'cart_data': request.session['cart_data_obj'],
-            'totalcartitems': len(request.session['cart_data_obj']),
-            'cart_total_amount': cart_total_amount,
+            'cart_data': cart_items,
+            'totalcartitems': len(cart_items),
+            'cart_total_amount': round(cart_total_amount, 2),
 
         }
+
         return render(request, 'store/checkout.html', context=context)
+    else:
+        messages.warning(
+            request, "You must login to proceed to Checkout page.")
+        return redirect("userauth:login")
+
+
+def customer_dashboard(request):
+    return render(request, 'store/customer_dashboard.html')
+
+
+def place_order(request):
+    user = request.user
+
+    if user.is_authenticated:
+        user_cart = Cart.objects.filter(user=user).first()
+        user_cart_items = CartItem.objects.filter(cart=user_cart)
+
+        customer, create = Customer.objects.get_or_create(
+            user=user,
+            phone_number="",
+        )
+
+        new_order = Order.objects.create(customer=customer)
+
+        order_total_price = 0
+        for item in user_cart_items:
+            OrderItem.objects.create(
+                order=new_order,
+                product=item.product,
+                quantity=item.quantity,
+                unit_price=item.product.discount_price
+            )
+            order_total_price += item.quantity * item.product.discount_price
+    else:
+        messages.warning(
+            request, "You must login to place order.")
+        return redirect("userauth:login")
+
+    zarinpal_request_data = {
+        "MerchantID": settings.MERCHANT,
+        "Amount": str(order_total_price),
+        "Description": f"ORDER_NO_{new_order.id}",
+        "Phone": str(customer.phone_number),
+        "CallbackURL": f'http://127.0.0.1:8000/zarinpal-verify/?order_total_price={order_total_price}&order_id={new_order.id}',
+    }
+
+    req_data = json.dumps(zarinpal_request_data)
+    # set content length by data
+    req_headers = {'content-type': 'application/json',
+                   'content-length': str(len(req_data))}
+    try:
+        resp = requests.post(
+            ZP_API_REQUEST, data=req_data, headers=req_headers, timeout=10)
+
+        if resp.status_code == 200:
+            resp = resp.json()
+
+            if resp['Status'] == 100:
+                authority = resp['Authority']
+                print(f"authority: {authority}")
+                return redirect(ZP_API_STARTPAY+authority)
+            else:
+                return render(request, 'store/payment_failed.html')
+        return resp
+
+    except requests.exceptions.Timeout:
+        return JsonResponse({'status': False, 'code': 'timeout'})
+    except requests.exceptions.ConnectionError:
+        return JsonResponse({'status': False, 'code': 'connection error'})
+
+
+def zarinpal_verify(request):
+    authority = request.GET.get('Authority')
+    order_total_price = request.GET.get('order_total_price')
+    order_id = request.GET.get('order_id')
+    req_data = {
+        "MerchantID": settings.MERCHANT,
+        "Amount": order_total_price,
+        "Authority": authority,
+    }
+    req_data = json.dumps(req_data)
+    # set content length by data
+    req_headers = {'content-type': 'application/json',
+                   'content-length': str(len(req_data))}
+    resp = requests.post(ZP_API_VERIFY, data=req_data, headers=req_headers)
+
+    if resp.status_code == 200:
+        resp = resp.json()
+        order = Order.objects.get(id=order_id)
+        if resp['Status'] == 100:
+            order.payment_status = "C"
+            order.save()
+            order_items = OrderItem.objects \
+                .filter(order=order) \
+                .annotate(
+                    subtotal=(F("quantity") * F("unit_price")),
+                )
+
+            context = {
+                "order": order,
+                "order_items": order_items,
+                "order_total_price": order_total_price
+            }
+
+            return render(request, 'store/payment_successful.html', context=context)
+        else:
+            order.payment_status = "F"
+            order.save()
+            return render(request, 'store/payment_failed.html')
+    return resp

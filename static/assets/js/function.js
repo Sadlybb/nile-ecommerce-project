@@ -136,6 +136,7 @@ function bindDeleteCartButtons() {
                 // Remove the item from the cart dropdown list
                 $(`#cart-item-${productId}`).remove();
                 $(`#cart-list-item-${productId}`).remove();
+                $(`#checkout-item-${productId}`).remove();
                 
                 
                 
