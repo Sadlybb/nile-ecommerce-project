@@ -128,7 +128,7 @@
                             <ul>
                                 <li><a href="{% url 'store:about' %}">About Us</a></li>
                                 {% if request.user.is_authenticated %}
-                                <li><a href="page-account.html">My Account</a></li>
+                                <li><a href="{% url 'store:customer-dashboard' %}">My Account</a></li>
                                 <li><a href="shop-order.html">Order Tracking</a></li>
                                 <li><a href="shop-wishlist.html">Wishlist</a></li>
                                 {% else %}
@@ -223,7 +223,7 @@
                                                     <a href="{% url 'store:product_detail' product_id %}"><img alt="Nest" src="{{ item.image }}" /></a>
                                                 </div>
                                                 <div class="shopping-cart-title">
-                                                    <h4><a href="{% url 'store:product_detail' product_id %}">{{ item.title|truncatechars:10 }}</a></h4>
+                                                    <h4><a href="{% url 'store:product_detail' product_id %}">{{ item.title|truncatechars:15 }}</a></h4>
                                                     <h3><span id="item-quantity-{{ product_id }}">{{ item.quantity }} × </span>${{ item.price }}</h3>
                                                 </div>
                                                 <div class="shopping-cart-delete">
@@ -250,14 +250,14 @@
                                 </div>
                                 <div class="header-action-icon-2">
                                     {% if request.user.is_authenticated %}
-                                        <a href="page-account.html">
+                                        <a href="{% url 'store:customer-dashboard' %}">
                                             <img class="svgInject" alt="Nest" src="{% static 'assets/imgs/theme/icons/icon-user.svg' %}" />
                                         </a>
-                                        <a href="page-account.html"><span class="lable ml-0">Account</span></a>
+                                        <a href="{% url 'store:customer-dashboard' %}"><span class="lable ml-0">Account</span></a>
                                         <div class="cart-dropdown-wrap cart-dropdown-hm2 account-dropdown">
                                             <ul>
                                                 <li>
-                                                    <a href="page-account.html"><i class="fi fi-rs-user mr-10"></i>My Account</a>
+                                                    <a href="{% url 'store:customer-dashboard' %}"><i class="fi fi-rs-user mr-10"></i>My Account</a>
                                                 </li>
                                                 <li>
                                                     <a href="page-account.html"><i class="fi fi-rs-location-alt mr-10"></i>Order Tracking</a>
@@ -278,7 +278,7 @@
                                             </ul>
                                         </div>
                                     {% else %}
-                                        <a href="page-account.html">
+                                        <a href="{% url 'store:customer-dashboard' %}">
                                             <img class="svgInject" alt="Nest" src="{% static 'assets/imgs/theme/icons/icon-user.svg' %}" />
                                         </a>
                                         <a href="page-account.html"><span class="lable ml-0">Account</span></a>
@@ -497,7 +497,7 @@
                                         <ul class="sub-menu">
                                             <li><a href="{% url 'store:about' %}">About Us</a></li>
                                             <li><a href="page-contact.html">Contact</a></li>
-                                            <li><a href="page-account.html">My Account</a></li>
+                                            <li><a href="{% url 'store:customer-dashboard' %}">My Account</a></li>
                                             <li><a href="page-login.html">Login</a></li>
                                             <li><a href="page-register.html">Register</a></li>
                                             <li><a href="page-forgot-password.html">Forgot password</a></li>

@@ -3,7 +3,7 @@ import json
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
-from django.db.models import Q, Count, Avg, F
+from django.db.models import Q, Count, Avg, F, Sum
 from django.template.loader import render_to_string
 from django.contrib import messages
 from django.contrib.auth.signals import user_logged_in
@@ -12,8 +12,8 @@ from django.conf import settings
 
 from taggit.models import Tag
 
-from . models import Vendor, Category, Product, Review, Cart, CartItem, Customer, Order, OrderItem
-from . forms import ReviewForm
+from . models import Address, Vendor, Category, Product, Review, Cart, CartItem, Customer, Order, OrderItem
+from . forms import ReviewForm, AddressForm
 
 
 if settings.SANDBOX:
@@ -29,6 +29,13 @@ ZP_API_VERIFY = \
     f"https://{sandbox}.zarinpal.com/pg/rest/WebGate/PaymentVerification.json"
 
 ZP_API_STARTPAY = f"https://{sandbox}.zarinpal.com/pg/StartPay/"
+
+
+# --------------------------------------------------------------------------About-----------------------------------------------------------------
+def about_us(request):
+    return render(request, 'store/about_us.html')
+
+
 # --------------------------------------------------------------------------Home Page view-----------------------------------------------------------------
 
 
@@ -529,11 +536,6 @@ def transfer_cart(sender, request, user, **kwargs):
                 cart_item.save()
 
 
-# --------------------------------------------------------------------------About-----------------------------------------------------------------
-def about_us(request):
-    return render(request, 'store/about_us.html')
-
-
 def checkout(request):
     user = request.user
 
@@ -567,10 +569,6 @@ def checkout(request):
         messages.warning(
             request, "You must login to proceed to Checkout page.")
         return redirect("userauth:login")
-
-
-def customer_dashboard(request):
-    return render(request, 'store/customer_dashboard.html')
 
 
 def place_order(request):
@@ -621,6 +619,7 @@ def place_order(request):
             resp = resp.json()
 
             if resp['Status'] == 100:
+
                 authority = resp['Authority']
                 print(f"authority: {authority}")
                 return redirect(ZP_API_STARTPAY+authority)
@@ -653,6 +652,7 @@ def zarinpal_verify(request):
         resp = resp.json()
         order = Order.objects.get(id=order_id)
         if resp['Status'] == 100:
+
             order.payment_status = "C"
             order.save()
             order_items = OrderItem.objects \
@@ -661,6 +661,9 @@ def zarinpal_verify(request):
                     subtotal=(F("quantity") * F("unit_price")),
                 )
 
+            user_cart = Cart.objects.filter(user=request.user).first()
+            user_cart_items = CartItem.objects.filter(cart=user_cart)
+            user_cart_items.delete()
             context = {
                 "order": order,
                 "order_items": order_items,
@@ -673,3 +676,59 @@ def zarinpal_verify(request):
             order.save()
             return render(request, 'store/payment_failed.html')
     return resp
+
+
+def order_detail(request, id):
+    order = Order.objects.get(id=id)
+
+    order_items = OrderItem.objects \
+        .filter(order=order) \
+        .annotate(
+            subtotal=(F("quantity") * F("unit_price")),
+        )
+
+    context = {
+        "order": order,
+        "order_items": order_items,
+    }
+
+    return render(request, 'store/order_detail.html', context=context)
+
+
+def customer_dashboard(request):
+    customer = Customer.objects.get(user=request.user)
+    addresses = Address.objects.filter(user=request.user)
+    address_form = AddressForm
+    customer_orders = Order.objects \
+        .filter(customer=customer) \
+        .annotate(
+            items_count=Count('items'),
+            total_price=Sum(F("items__quantity") * F("items__unit_price")),
+        ) \
+        .order_by('-id')
+    if request.method == 'POST':
+        address_form = AddressForm(request.POST or None)
+        if address_form.is_valid():
+            new_address = address_form.save(commit=False)
+            new_address.user = request.user
+            new_address.save()
+            messages.success(request, 'Address added.')
+            return redirect("store:customer-dashboard")
+
+    context = {
+        'orders': customer_orders,
+        'addresses': addresses,
+        'address_form': address_form,
+
+    }
+    return render(request, 'store/customer_dashboard.html', context=context)
+
+
+def set_default_address(request):
+    user = request.user
+    address_id = request.GET['id']
+
+    Address.objects.filter(user=user).update(is_default=False)
+    Address.objects.filter(id=address_id).update(is_default=True)
+
+    return JsonResponse({'boolean': True})

@@ -84,19 +84,18 @@ class Customer(models.Model):
 
 
 class Address(models.Model):
-    address_line1 = models.TextField(default="123 Main Street")
-    address_line2 = models.TextField(default="123 Main Street")
-    postal_code = models.CharField(max_length=10, default="1234567890")
+    address_line = models.TextField()
+    postal_code = models.CharField(max_length=10)
     country = CountryField(blank_label="(select country)")
     city = models.CharField(max_length=50)
-    assigned_phone_number = models.CharField(
-        max_length=30, default="+989123456789")
+    assigned_phone_number = models.CharField(max_length=30)
+    is_default = models.BooleanField(default=False)
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="addresses")
 
     def __str__(self):
-        return f"{self.country} - {self.city} - {self.address_line1[:20]}"
+        return f"{self.country} - {self.city} - {self.address_line[:20]}"
 
     class Meta:
         verbose_name_plural = "Addresses"

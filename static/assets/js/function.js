@@ -85,7 +85,7 @@ function bindAddToCartButtons() {
                 $("#cart-list-index ul").empty();
 
                 response.cartitems.forEach(function(item) {
-                    let truncatedTitle = item.title.length > 10 ? item.title.substring(0, 10) + "..." : item.title;
+                    let truncatedTitle = item.title.length > 15 ? item.title.substring(0, 15) + "..." : item.title;
 
                     $("#cart-list-index ul").append(`
                         <li id="cart-item-${item.id}">
@@ -188,6 +188,11 @@ function bindUpdateCartButtons() {
 }
 
 $(document).ready(function() {
+    bindUpdateCartButtons()
+    bindDeleteCartButtons(); // Initial bind
+    bindAddToCartButtons(); // Initial bind
+
+    
     $(".filter-checkbox, #price-filter-btn").on("click", function() {
         let filterObject = {};
 
@@ -235,7 +240,36 @@ $(document).ready(function() {
             return false;
         }
     });
-    bindUpdateCartButtons()
-    bindDeleteCartButtons(); // Initial bind
-    bindAddToCartButtons(); // Initial bind
+
+
+    $(".make-default-address").on("click", function(){
+        let id = $(this).attr("data-address-id")
+        let this_val = $(this)
+
+        console.log("id is: " + id)
+
+
+        $.ajax ({
+            url: "/set-default-address",
+            data:{
+                "id": id,
+            },
+            dataType: "json",
+
+            success: function(response){
+                console.log("Setting address default  ....")
+
+                if (response.boolean == true){
+
+                    $(".check").hide()
+                    $(".action_btn").show()
+
+                    $(".check"+id).show()
+                    $(".button"+id).hide()
+                }
+            }
+
+        })
+    })
+
 });

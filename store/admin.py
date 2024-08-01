@@ -72,7 +72,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['title', 'category_image', 'products_count']
+    list_display = ['title', 'category_image', 'products_count', 'is_active']
+    list_editable = ['is_active']
     exclude = ['created_by']
     search_fields = ['title']
 
@@ -124,7 +125,7 @@ class CustomerAdmin(admin.ModelAdmin):
     @admin.display(ordering='orders_count')
     def orders(self, customer):
         url = (
-            reverse('admin:core_order_changelist')
+            reverse('admin:store_order_changelist')
             + '?'
             + urlencode({
                 'customer_id': str(customer.id),
@@ -161,11 +162,12 @@ class VendorAdmin(admin.ModelAdmin):
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
-    list_display = ['user', 'country', 'city', 'postal_code', 'address_line1']
+    list_display = ['user', 'country', 'city',
+                    'postal_code', 'address_line', 'is_default']
     list_per_page = 10
     list_filter = ['country', 'city']
     list_select_related = ['user']
-    search_fields = ['country', 'city', 'address_line1']
+    search_fields = ['country', 'city', 'address_line']
 
 
 @admin.register(Order)

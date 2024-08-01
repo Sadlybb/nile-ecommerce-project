@@ -52,6 +52,13 @@ urlpatterns = [
     path('customer-dashboard/', views.customer_dashboard,
          name="customer-dashboard"),
 
+    path('customer-dashboard/order/<int:id>',
+         views.order_detail, name="order-detail"),
+
     path('place-order/', views.place_order, name="place-order"),
     path('zarinpal-verify/', views.zarinpal_verify, name='zarinpal-verify'),
+
+
+    path('set-default-address', views.set_default_address,
+         name="set-default-address")
 ]
