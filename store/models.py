@@ -28,7 +28,7 @@ class Vendor(models.Model):
     phone_number = models.CharField(max_length=30, default="+989123456789")
     image = models.ImageField(
         upload_to=user_directory_path, default="person.png", null=True, blank=True)
-    rating = models.IntegerField(choices=RATING_CHOICES)
+    rating = models.IntegerField(choices=RATING_CHOICES, null=True, blank=True)
     chat_response_time = models.CharField(max_length=100, default="1 Day")
     shipping_time = models.CharField(max_length=100, default="1 Day")
     allowed_return_days = models.CharField(max_length=100, default="7 Day")
@@ -274,7 +274,7 @@ class Shipment(models.Model):
     SHIPMENT_STATUS_DELIVERD = "D"
 
     SHIPMENT_STATUS_CHOICES = {
-        SHIPMENT_STATUS_PENDING: "Pending",
+        SHIPMENT_STATUS_PENDING: "Proccessing",
         SHIPMENT_STATUS_SHIPPED: "Shipped",
         SHIPMENT_STATUS_DELIVERD: "Delivered",
     }
@@ -283,9 +283,24 @@ class Shipment(models.Model):
         Order, on_delete=models.CASCADE, related_name="shipments")
     address = models.ForeignKey(
         Address, on_delete=models.CASCADE, related_name="shipments")
-    status = models.CharField(max_length=1, choices=SHIPMENT_STATUS_CHOICES)
+    status = models.CharField(
+        max_length=1, choices=SHIPMENT_STATUS_CHOICES, default="P")
 
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = "Shipments"
+
+
+class Wishlist(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='wishlists')
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='wishlists')
+    date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.product}"
+
+    class Meta:
+        verbose_name_plural = 'Wishlists'

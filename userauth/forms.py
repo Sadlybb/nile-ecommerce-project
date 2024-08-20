@@ -6,6 +6,11 @@ from . models import User
 
 class UserRegisterForm(UserCreationForm):
 
+    first_name = forms.CharField(widget=forms.TextInput(
+        attrs={'placeholder': 'First Name'}))
+    last_name = forms.CharField(widget=forms.TextInput(
+        attrs={'placeholder': 'Last Name'}))
+
     email = forms.EmailField(widget=forms.EmailInput(
         attrs={'placeholder': 'Email'}))
     username = forms.CharField(widget=forms.TextInput(
@@ -17,4 +22,5 @@ class UserRegisterForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ['email', 'username', 'password1', 'password2']
+        fields = ['first_name', 'last_name', 'email',
+                  'username', 'password1', 'password2']

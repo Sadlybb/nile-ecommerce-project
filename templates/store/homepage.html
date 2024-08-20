@@ -223,8 +223,8 @@
                                                 <img class="hover-img" src="{{ product.images.all.1.image.url }}" alt="product image" />
                                             </a>
                                         </div>
-                                        <div class="product-action-1">
-                                            <a aria-label="Add To Wishlist" class="action-btn" href="shop-wishlist.html"><i class="fi-rs-heart"></i></a>
+                                        <div class="product-action-1 d-flex">
+                                            <button aria-label="Add To Wishlist" class="action-btn add-to-wishlist" data-product-item="{{product.id}}" style="border:none; background:none"><i class="fi-rs-heart text-brand"></i></button>
                                             <a aria-label="Compare" class="action-btn" href="shop-compare.html"><i class="fi-rs-shuffle"></i></a>
                                             <a aria-label="Quick view" class="action-btn" data-bs-toggle="modal" data-bs-target="#quickViewModal"><i class="fi-rs-eye"></i></a>
                                         </div>

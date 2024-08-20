@@ -272,4 +272,69 @@ $(document).ready(function() {
         })
     })
 
+
+    $(".address-delete-btn").on("click", function(){
+        let id = $(this).attr("data-address-delete")
+
+        $.ajax ({
+            url: "/delete-address",
+            data: {
+                "id": id,
+            },
+            dataType: "json",
+
+            success: function(response){
+                console.log("Deleting address number: "+ id)    
+                $("#card-address-"+id).remove()
+            }
+        })
+    })
+
+    $(".add-to-wishlist").on("click", function(){
+        let product_id = $(this).attr("data-product-item")
+        let this_val = $(this)
+
+        $.ajax ({
+            url: "/add-to-wishlist",
+            data:{
+                "product_id": product_id,
+            },
+            dataType: "json",
+
+            beforeSend: function(){
+                console.log("Sending to wishlist id: " + product_id)
+            },
+                
+            
+            success:function(response){
+                console.log("Product ID: " + product_id + " successfuly added to wishlist")
+                this_val.html("✔")
+                $(".wishlist-count").text(response.wishlist_count)
+
+            }
+        })
+    })
+
+    $(".delete-from-wishlist").on("click", function () {
+        let product_id = $(this).attr("data-product-item")
+        
+        $.ajax({
+            url: "/delete-from-wishlist",
+            data:{
+                "product_id": product_id,
+            },
+            dataType: "json",
+
+            beforeSend: function(){
+                console.log("Product ID: " + product_id + "---> Send to delete.")
+            },
+
+            success: function(response){
+                console.log("Item Deleted from wishlist")
+                $("#wishlist-item-"+product_id).remove()
+                $(".wishlist-count").text(response.wishlist_count)
+            }
+        })
+    })
+
 });

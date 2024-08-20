@@ -1,0 +1,91 @@
+{% extends 'partials/base.html' %}
+
+{% load static %}
+
+{% block title %}
+Wishlist
+{% endblock title %}
+
+
+{% block content %}
+
+    <main class="main">
+        <div class="page-header breadcrumb-wrap">
+            <div class="container">
+                <div class="breadcrumb">
+                    <a href="{% url 'store:homepage' %}" rel="nofollow"><i class="fi-rs-home mr-5"></i>Home</a>
+                    <span></span> Shop <span></span> Fillter
+                </div>
+            </div>
+        </div>
+        <div class="container mb-30 mt-50">
+            <div class="row">
+                <div class="col-xl-10 col-lg-12 m-auto">
+                    <div class="mb-50">
+                        <h1 class="heading-2 mb-10">Your Wishlist</h1>
+                        <h6 class="text-body">There are <span class="text-brand wishlist-count">{{ wishlist.count }}</span> products in this list</h6>
+                    </div>
+                    <div class="table-responsive shopping-summery">
+                        <table class="table table-wishlist">
+                            <thead>
+                                <tr class="main-heading">
+                                    <th scope="col" colspan="2" class="start pl-30">Product</th>
+                                    <th scope="col">Price</th>
+                                    <th scope="col">Stock Status</th>
+                                    <th scope="col">Action</th>
+                                    <th scope="col" class="end">Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in wishlist %}
+                                <tr class="pt-30 wishlist-item" id="wishlist-item-{{ item.product.id }}">
+                               
+                                    <td class="image product-thumbnail pt-40 start pl-30"><img src="{{ item.product.images.all.0.image.url }}" alt="#" /></td>
+                                    <td class="product-des product-name">
+                                        <h6><a class="product-name mb-10" href="{% url 'store:product_detail' item.product.id %}">{{ item.product.title }}</a></h6>
+                                        <div class="product-rate-cover">
+                                            <div class="product-rate d-inline-block">
+                                                <div class="product-rating" style="width: {{ item.product.get_rating_percent }}%"></div>
+                                            </div>
+                                            <span class="font-small ml-5 text-muted"> ({{item.product.rating}})</span>
+                                        </div>
+                                    </td>
+                                    <td class="price" data-title="Price">
+                                        <h3 class="text-brand"><span>$</span><span class="current-product-price-{{ item.product.id }}">{{ item.product.discount_price }}</span></h3>
+                                    </td>
+                                    {% if item.product.is_active and item.product.publish_status == "P" and item.product.inventory > 0 %}
+                                    <td class="text-center detail-info" data-title="Stock">
+                                        <span class="stock-status in-stock mb-0"> In Stock </span>
+                                    </td>
+                                    {% else %}
+                                    <td class="text-center detail-info" data-title="Stock">
+                                        <span class="stock-status out-stock mb-0"> Out Stock </span>
+                                    </td>
+                                    {% endif %}
+                                    <td class="text-right" data-title="Cart">
+
+                                            <input type="hidden" class="product-quantity-{{ item.product.id }}" value="1">
+                                            <input type="hidden" class="product-image-{{ item.product.id }}" value="{{ item.product.images.all.0.image.url }}">
+                                            <input type="hidden" class="product-id-{{ item.product.id }}" value="{{ item.product.id }}">
+                                            <input type="hidden" class="product-title-{{ item.product.id }}" value="{{ item.product.title }}">
+
+                                            <button class="add btn btn-sm add-to-cart-btn " data-index="{{ item.product.id }}" style="border: none;" id="add-to-cart-btn"><i class="fi-rs-shopping-cart mr-5"></i>Add to cart</button>
+
+                                    </td>
+                                    <td class="action text-center" data-title="Remove">
+                                        <button style="border: none; background: none;" class="btn text-body delete-from-wishlist" data-product-item="{{ item.product.id }}"><i class="fi-rs-trash"></i></button>
+
+                                    </td>
+                                </tr>
+                                    
+                                {% endfor %}
+                              
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+   
+{% endblock content %}

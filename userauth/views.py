@@ -7,16 +7,19 @@ from django.contrib.auth import authenticate, login, logout
 from .models import User
 from .forms import UserRegisterForm
 
+from store.models import Vendor, Customer
+
 
 def user_register_view(request):
     form = UserRegisterForm
 
     if request.method == 'POST':
         form = UserRegisterForm(request.POST or None)
-
+        user_type = request.POST.get('user_type')
         if form.is_valid():
             form.save()
-            username = form.cleaned_data.get('email')
+
+            username = form.cleaned_data.get('username')
             messages.success(
                 request, f"Hey {username}, Your account successfuly created.")
 
@@ -24,6 +27,14 @@ def user_register_view(request):
             password = form.cleaned_data.get('password1')
             new_user = authenticate(request, email=email, password=password)
             login(request, new_user)
+
+            if user_type == "customer":
+                new_customer = Customer.objects.create(user=request.user)
+                new_customer.save()
+            else:
+                new_vendor = Vendor.objects.create(user=request.user)
+                new_vendor.save()
+
             return redirect('store:homepage')
 
     context = {
@@ -48,7 +59,7 @@ def user_login_view(request):
 
             if user:
                 login(request, user)
-                messages.success(request, f"Successfully logged in.")
+                messages.success(request, "Successfully logged in.")
                 return redirect('store:homepage')
             else:
                 messages.warning(request, "Please check your inputs.")

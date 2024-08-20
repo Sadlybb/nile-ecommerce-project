@@ -12,7 +12,7 @@ from django.conf import settings
 
 from taggit.models import Tag
 
-from . models import Address, Vendor, Category, Product, Review, Cart, CartItem, Customer, Order, OrderItem
+from . models import Address, Vendor, Category, Product, Review, Cart, CartItem, Customer, Order, OrderItem, Shipment, Wishlist
 from . forms import ReviewForm, AddressForm
 
 
@@ -538,37 +538,61 @@ def transfer_cart(sender, request, user, **kwargs):
 
 def checkout(request):
     user = request.user
+    address_form = AddressForm
+    if request.method == "GET":
 
-    if user.is_authenticated:
-        cart = Cart.objects.get(user=user)
-        user_cart_items = CartItem.objects.filter(cart=cart)
+        if user.is_authenticated:
+            cart = Cart.objects.get(user=user)
+            user_cart_items = CartItem.objects.filter(cart=cart)
+            if len(user_cart_items) == 0:
+                messages.info(
+                    request, "You have no item in your cart, continue shopping.")
+                return redirect('store:homepage')
+            else:
+                cart_items = {}
+                for item in user_cart_items:
+                    cart_items[str(item.product.id)] = {
+                        'title': str(item.product.title),
+                        'quantity': int(item.quantity),
+                        'price': float(item.product.discount_price),
+                        'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "",
+                    }
+                cart_total_amount = 0
+                for product_id, item in cart_items.items():
+                    item['subtotal'] = int(
+                        item['quantity']) * float(item['price'])
+                    cart_total_amount += item['subtotal']
 
-        cart_items = {}
-        for item in user_cart_items:
-            cart_items[str(item.product.id)] = {
-                'title': str(item.product.title),
-                'quantity': int(item.quantity),
-                'price': float(item.product.discount_price),
-                'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "",
-            }
+                default_address = Address.objects \
+                    .filter(user=user, is_default=True) \
+                    .first()
+                user_addresses = Address.objects.filter(user=user)
+                customer = Customer.objects.get(user=user)
+                context = {
+                    'cart_data': cart_items,
+                    'totalcartitems': len(cart_items),
+                    'cart_total_amount': round(cart_total_amount, 2),
+                    'addresses': user_addresses,
+                    'address_form': address_form,
+                    'customer': customer,
 
-        cart_total_amount = 0
-        for product_id, item in cart_items.items():
-            item['subtotal'] = int(item['quantity']) * float(item['price'])
-            cart_total_amount += item['subtotal']
+                }
 
-        context = {
-            'cart_data': cart_items,
-            'totalcartitems': len(cart_items),
-            'cart_total_amount': round(cart_total_amount, 2),
-
-        }
-
-        return render(request, 'store/checkout.html', context=context)
-    else:
-        messages.warning(
-            request, "You must login to proceed to Checkout page.")
-        return redirect("userauth:login")
+                return render(request, 'store/checkout.html', context=context)
+        else:
+            messages.warning(
+                request, "You must login to proceed to Checkout page.")
+            return redirect("userauth:login")
+    elif request.method == "POST":
+        address_form = AddressForm(request.POST or None)
+        if address_form.is_valid():
+            Address.objects.filter(user=request.user).update(is_default=False)
+            new_address = address_form.save(commit=False)
+            new_address.user = request.user
+            new_address.is_default = True
+            new_address.save()
+            messages.success(request, 'Address added.')
+            return redirect("store:checkout")
 
 
 def place_order(request):
@@ -578,10 +602,7 @@ def place_order(request):
         user_cart = Cart.objects.filter(user=user).first()
         user_cart_items = CartItem.objects.filter(cart=user_cart)
 
-        customer, create = Customer.objects.get_or_create(
-            user=user,
-            phone_number="",
-        )
+        customer = Customer.objects.get(user=user)
 
         new_order = Order.objects.create(customer=customer)
 
@@ -594,6 +615,19 @@ def place_order(request):
                 unit_price=item.product.discount_price
             )
             order_total_price += item.quantity * item.product.discount_price
+
+        user_address = Address.objects.filter(
+            user=user, is_default=True).first()
+
+        if user_address:
+            Shipment.objects.create(
+                order=new_order,
+                address=user_address,
+            )
+        else:
+            messages.warning(request, "Please select the address.")
+            return redirect('store:checkout')
+
     else:
         messages.warning(
             request, "You must login to place order.")
@@ -709,8 +743,10 @@ def customer_dashboard(request):
     if request.method == 'POST':
         address_form = AddressForm(request.POST or None)
         if address_form.is_valid():
+            Address.objects.filter(user=request.user).update(is_default=False)
             new_address = address_form.save(commit=False)
             new_address.user = request.user
+            new_address.is_default = True
             new_address.save()
             messages.success(request, 'Address added.')
             return redirect("store:customer-dashboard")
@@ -732,3 +768,66 @@ def set_default_address(request):
     Address.objects.filter(id=address_id).update(is_default=True)
 
     return JsonResponse({'boolean': True})
+
+
+def delete_address(request):
+    address_id = request.GET["id"]
+
+    Address.objects.get(id=address_id).delete()
+
+    return JsonResponse({"boolean": True})
+
+
+def wishlist_view(request):
+    user = request.user
+    wishlist = Wishlist.objects.filter(user=user)
+
+    context = {
+        'wishlist': wishlist,
+    }
+
+    return render(request, 'store/wishlist.html', context=context)
+
+
+def add_to_wishlist(request):
+    product_id = request.GET.get('product_id')
+    user = request.user
+    product = Product.objects.get(id=product_id)
+
+    product_in_wishlist = Wishlist.objects.filter(
+        product=product, user=user).exists()
+
+    if product_in_wishlist:
+        pass
+    else:
+        Wishlist.objects.create(
+            product=product,
+            user=user,
+        )
+
+    wishlist_count = Wishlist.objects.filter(user=user).count()
+
+    context = {
+        "bool": True,
+        "wishlist_count": wishlist_count,
+
+    }
+
+    return JsonResponse(context)
+
+
+def delete_from_wishlist(request):
+    product_id = request.GET.get('product_id')
+    user = request.user
+    product = Product.objects.get(id=product_id)
+
+    Wishlist.objects.filter(product=product, user=user).delete()
+
+    wishlist_count = Wishlist.objects.filter(user=user).count()
+
+    context = {
+        "bool": True,
+        "wishlist_count": wishlist_count,
+    }
+
+    return JsonResponse(context)

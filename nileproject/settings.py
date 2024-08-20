@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'ckeditor',
     'ckeditor_uploader',
     ##### Custom Apps####
-    'core',
     'store',
     'userauth',
 ]
@@ -96,12 +95,8 @@ WSGI_APPLICATION = 'nileproject.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'nileproject',
-        'USER': 'root',
-        'PASSWORD': 'S@eed0935',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

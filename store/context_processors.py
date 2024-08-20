@@ -1,5 +1,5 @@
 from django.db.models import Min, Max
-from .models import Category, Vendor, Product, Cart, CartItem
+from .models import Category, Vendor, Product, Cart, CartItem, Wishlist
 from taggit.models import Tag
 
 
@@ -10,19 +10,11 @@ def default(request):
         Min("discount_price"), Max("discount_price"))
     tags = Tag.objects.all()
 
-    context = {
-        'categories': categories,
-        'vendors': vendors,
-        'tags': tags,
-        'min_max_price': min_max_price,
-    }
-
     cart_total_amount = 0
     cart_data_context = {}
 
     if request.user.is_authenticated:
         user_cart, create = Cart.objects.get_or_create(user=request.user)
-
         if create:
             cart_data_context = {}
             cart_total_amount = 0
@@ -37,19 +29,29 @@ def default(request):
                     'price': str(item.product.discount_price),
                     'image': f"/media/{item.product.images.first().image}" if item.product.images.exists() else "",
                 }
-
+        user_wishlist = Wishlist.objects.filter(user=request.user)
     else:
         if 'cart_data_obj' in request.session:
             cart_data_context = request.session['cart_data_obj']
         else:
             cart_data_context = {}
 
+        user_wishlist = None
+
     for product_id, item in cart_data_context.items():
         item['subtotal'] = int(item['quantity']) * float(item['price'])
         cart_total_amount += float(item['subtotal'])
 
-    context['cart_data'] = cart_data_context
-    context['totalcartitems'] = len(cart_data_context)
-    context['cart_total_amount'] = cart_total_amount
+    context = {
+        'categories': categories,
+        'vendors': vendors,
+        'tags': tags,
+        'min_max_price': min_max_price,
+        'cart_data': cart_data_context,
+        'totalcartitems': len(cart_data_context),
+        'cart_total_amount': cart_total_amount,
+        'wishlist': user_wishlist,
+
+    }
 
     return context

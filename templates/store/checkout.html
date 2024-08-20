@@ -27,125 +27,113 @@ Checkout
             </div>
             <div class="row">
                 <div class="col-lg-7">
-                    <div class="row mb-50">
-                        <div class="col-lg-6">
-                            <form method="post" class="apply-coupon">
-                                <input type="text" placeholder="Enter Coupon Code...">
-                                <button class="btn  btn-md" name="login">Apply Coupon</button>
-                            </form>
-                        </div>
-                    </div>
                     <div class="row">
                         <h4 class="mb-30">Billing Details</h4>
-                        <form method="post">
-                            <div class="row">
-                                <div class="form-group col-lg-6">
-                                    <input type="text" required="" name="fname" placeholder="First name *">
-                                </div>
-                                <div class="form-group col-lg-6">
-                                    <input type="text" required="" name="lname" placeholder="Last name *">
+                        <div class="row">
+                            {% for address in addresses %}
+                            <div class="col-lg-4" id="card-address-{{ address.id }}">
+                                <div class="card border border-rounded mb-10 mb-lg-10">
+                                    <div class="card-header" style="padding: 10px;">
+                                        <div class="row">
+                                            <div class="col">
+                                                <h5 class="mb-0 text-muted"><strong>Address {{ forloop.counter }}</strong></h5>
+                                            </div>
+                                            <div class="col d-flex flex-row-reverse">
+                                                <button data-address-delete="{{ address.id }}" class="address-delete-btn" style="border: none; background: none;"><i class="fa fa-trash text-danger" aria-hidden="true"></i></button>
+                                            </div>
+                                        </div>
+                                        
+                                    </div>
+                                    <div class="card-body border" style="padding: 10px;">
+                                        <h6><i class="{{ address.country.flag_css }}"></i>{{ address.country.name }}-{{ address.city }}</h6><br>
+                              
+                                        <address class="text-dark">
+                                            <table>
+                                                <tr>
+                                                    <td style="padding: 5px;"><span class="text-muted">address:</span></td>
+                                                    <td style="padding: 5px;">{{ address.address_line }}</td>
+                                                    
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 5px;"><span class="text-muted">postal code:</span></td>
+                                                    <td style="padding: 5px;">{{ address.postal_code }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 5px;"><span class="text-muted">phone:</span></td>
+                                                    <td style="padding: 5px;">{{ address.assigned_phone_number }}</td>
+                                                </tr>
+                                            </table>        
+                                            {% if address.is_default %}
+                                                <i data-address-id="{{ address.id }}" class="fa fa-check-circle text-success check check{{ address.id }}"></i>
+                                                <button data-address-id="{{ address.id }}" style="display: none;" class="btn btn-small make-default-address button{{ address.id }} action_btn" > Set Default </button>
+                                            {% else %}
+                                                <i data-address-id="{{ address.id }}" style="display: none;" class="fa fa-check-circle text-success check check{{ address.id }}"></i>
+                                                <button data-address-id="{{ address.id }}" class="btn btn-small make-default-address button{{ address.id }} action_btn" > Set Default </button>
+                                            {% endif %}                                                  
+                                        </address>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="form-group col-lg-6">
-                                    <input type="text" name="billing_address" required="" placeholder="Address *">
-                                </div>
-                                <div class="form-group col-lg-6">
-                                    <input type="text" name="billing_address2" required="" placeholder="Address line2">
-                                </div>
-                            </div>
-                            <div class="row shipping_calculator">
-                                <div class="form-group col-lg-6">
-                      
-                                </div>
-                                <div class="form-group col-lg-6">
-                                    <input required="" type="text" name="city" placeholder="City / Town *">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="form-group col-lg-6">
-                                    <input required="" type="text" name="zipcode" placeholder="Postcode / ZIP *">
-                                </div>
-                                <div class="form-group col-lg-6">
-                                    <input required="" type="text" name="phone" placeholder="Phone *">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="form-group col-lg-6">
-                                    <input required="" type="text" name="cname" placeholder="Company Name">
-                                </div>
-                                <div class="form-group col-lg-6">
-                                    <input required="" type="text" name="email" placeholder="Email address *">
-                                </div>
-                            </div>
-                            <div class="form-group mb-30">
-                                <textarea rows="5" placeholder="Additional information"></textarea>
-                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="ship_detail">
                             <div class="form-group">
-                                <div class="checkbox">
+                                <div class="chek-form">
                                     <div class="custome-checkbox">
-                                        <input class="form-check-input" type="checkbox" name="checkbox" id="createaccount">
-                                        <label class="form-check-label label_info" data-bs-toggle="collapse" href="#collapsePassword" data-target="#collapsePassword" aria-controls="collapsePassword" for="createaccount"><span>Create an account?</span></label>
+                                        <input class="form-check-input" type="checkbox" name="checkbox" id="differentaddress">
+                                        <label class="form-check-label label_info" data-bs-toggle="collapse" data-target="#collapseAddress" href="#collapseAddress" aria-controls="collapseAddress" for="differentaddress"><span>Ship to a different address?</span></label>
                                     </div>
                                 </div>
                             </div>
-                            <div id="collapsePassword" class="form-group create-account collapse in">
+                            <div id="collapseAddress" class="different_address collapse in">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <div>
+                                        <table id="add-address">
+                                            <tr>
+                                                <td id="country" style="border: none;padding: 5px;">{{ address_form.country }}</td>
+                                                <td id="city" style="border: none; padding: 5px;">{{ address_form.city }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td id="postal_code" style="border: none;padding: 5px;">{{ address_form.postal_code }}</td>
+                                                <td id="phone_number" style="border: none;padding: 5px;">{{ address_form.assigned_phone_number }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td id="address_line" colspan="2" style="border: none;padding: 5px;">{{ address_form.address_line }}</td>
+                                            </tr>
+                                        </table>
+                                        <button class="btn btn-small" type="submit" >Add</button>
+                                        
+                                    </div>
+                                </form>
+                                <br>
+                                <br>
+                            </div>
+                        </div>
+                        <br>
+                        <hr>
+
+                        <form action="{% url 'store:place-order' %}" method="POST">
+                            {% csrf_token %}
+                            <div class="row">
+                                <h4>Receiver:</h4>
+                                <br>
+                                <br>
+    
                                 <div class="row">
-                                    <div class="col-lg-6">
-                                        <input required="" type="password" placeholder="Password" name="password">
+                                    <div class="col">
+                                        <input type="text" name="receiver-name" id="" placeholder="Name" required value="{{ request.user.first_name|title }} {{ request.user.last_name|title }}">
+                                    </div>
+                                    <div class="col">
+                                        <input type="text" name="receiver-phone" id="" placeholder="Phone " required value="{{ customer.phone_number }}">
                                     </div>
                                 </div>
                             </div>
-                            <div class="ship_detail">
-                                <div class="form-group">
-                                    <div class="chek-form">
-                                        <div class="custome-checkbox">
-                                            <input class="form-check-input" type="checkbox" name="checkbox" id="differentaddress">
-                                            <label class="form-check-label label_info" data-bs-toggle="collapse" data-target="#collapseAddress" href="#collapseAddress" aria-controls="collapseAddress" for="differentaddress"><span>Ship to a different address?</span></label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div id="collapseAddress" class="different_address collapse in">
-                                    <div class="row">
-                                        <div class="form-group col-lg-6">
-                                            <input type="text" required="" name="fname" placeholder="First name *">
-                                        </div>
-                                        <div class="form-group col-lg-6">
-                                            <input type="text" required="" name="lname" placeholder="Last name *">
-                                        </div>
-                                    </div>
-                                    <div class="row shipping_calculator">
-                                        <div class="form-group col-lg-6">
-                                            <input required="" type="text" name="cname" placeholder="Company Name">
-                                        </div>
-                                        <div class="form-group col-lg-6">
-                     
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="form-group col-lg-6">
-                                            <input type="text" name="billing_address" required="" placeholder="Address *">
-                                        </div>
-                                        <div class="form-group col-lg-6">
-                                            <input type="text" name="billing_address2" required="" placeholder="Address line2">
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="form-group col-lg-6">
-                                            <input required="" type="text" name="state" placeholder="State / County *">
-                                        </div>
-                                        <div class="form-group col-lg-6">
-                                            <input required="" type="text" name="city" placeholder="City / Town *">
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="form-group col-lg-6">
-                                            <input required="" type="text" name="zipcode" placeholder="Postcode / ZIP *">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            
+                            <button class="btn btn-fill-out btn-block mt-30">Place an Order<i class="fi-rs-sign-out ml-15"></i></button>
+    
                         </form>
+                  
                     </div>
                 </div>
                 <div class="col-lg-5">
@@ -155,7 +143,7 @@ Checkout
                             <h4 class="text-muted">Total: <span class="text-brand">$<span class="cart-total-amount">{{cart_total_amount|floatformat:2}}</span></span></h4>
                         </div>
                         <div class="divider-2 mb-30"></div>
-                        <a href="{% url 'store:cart' %}" class="btn btn-fill-out btn-block mt-10 mb-40">Back to Cart</a>
+                        <a href="{% url 'store:cart' %}" class="btn btn-small btn-fill-out btn-block mt-10 mb-40">Back to Cart</a>
                         <div class="table-responsive order_table checkout">
                             <table class="table no-border">
                                 <tbody>
@@ -195,7 +183,7 @@ Checkout
                         </div>
                         <div>
                         </div>
-                        <a href="{% url 'store:place-order' %}" class="btn btn-fill-out btn-block mt-30">Place an Order<i class="fi-rs-sign-out ml-15"></i></a>
+                        
                     </div>
                 </div>
             </div>

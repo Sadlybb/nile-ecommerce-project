@@ -60,5 +60,13 @@ urlpatterns = [
 
 
     path('set-default-address', views.set_default_address,
-         name="set-default-address")
+         name="set-default-address"),
+
+    path("delete-address/", views.delete_address, name="delete-address"),
+
+    path("wishlist/", views.wishlist_view, name="wishlist"),
+    path('add-to-wishlist/', views.add_to_wishlist, name="add-to-wishlist"),
+    path('delete-from-wishlist/', views.delete_from_wishlist,
+         name="delete-from-wishlist"),
+
 ]
