@@ -27,7 +27,7 @@ class Vendor(models.Model):
     full_description = RichTextUploadingField(blank=True, default='-')
     phone_number = models.CharField(max_length=30, default="+989123456789")
     image = models.ImageField(
-        upload_to=user_directory_path, default="person.png", null=True, blank=True)
+        upload_to=user_directory_path, default="/images/users/person.png", null=True, blank=True)
     rating = models.IntegerField(choices=RATING_CHOICES, null=True, blank=True)
     chat_response_time = models.CharField(max_length=100, default="1 Day")
     shipping_time = models.CharField(max_length=100, default="1 Day")
@@ -69,7 +69,7 @@ class Customer(models.Model):
     phone_number = models.CharField(max_length=30, default="+989123456789")
     birth_date = models.DateField(null=True, blank=True)
     image = models.ImageField(
-        upload_to=user_directory_path, default="person.png", null=True, blank=True)
+        upload_to=user_directory_path, default="/images/users/person.png", null=True, blank=True)
     membership = models.CharField(
         max_length=1, choices=MEMBERSHIP_STATUS_CHOICES, default="B")
 
@@ -105,8 +105,9 @@ class Category(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(
-        upload_to='store/images/category', default="category.jpg")
+        upload_to='store/images/category', default="store/images/category.png")
     is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -176,7 +177,7 @@ class Product(models.Model):
 
 class ProductImage(models.Model):
     image = models.ImageField(
-        upload_to="store/images/product", default="product.png")
+        upload_to="store/images/product", default="store/images/product.png")
 
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name="images")
@@ -304,3 +305,16 @@ class Wishlist(models.Model):
 
     class Meta:
         verbose_name_plural = 'Wishlists'
+
+
+class EmailSubscription(models.Model):
+    email = models.EmailField(unique=True)
+    date = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.email
+
+    class Meta:
+        verbose_name = 'Email Subscription'
+        verbose_name_plural = 'Email Subscriptions'

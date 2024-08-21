@@ -85,7 +85,7 @@ Checkout
                                                                 <td>{{ order.last_update }}</td>
                                                                 <td>{{ order.get_payment_status_display }}</td>
                                                                 <td>{{ order.shipments.all.0.get_status_display }}</td>
-                                                                <td>${{ order.total_price }} for {{ order.items_count }} item</td>
+                                                                <td>${{ order.total_price|floatformat:2 }} for {{ order.items_count }} item</td>
                                                                 <td><a href="{% url 'store:order-detail' order.id %}" class="btn-small d-block">View</a></td>
                                                             </tr>
                                                             {% endfor %}

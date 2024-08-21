@@ -68,5 +68,6 @@ urlpatterns = [
     path('add-to-wishlist/', views.add_to_wishlist, name="add-to-wishlist"),
     path('delete-from-wishlist/', views.delete_from_wishlist,
          name="delete-from-wishlist"),
+    path('subscribe-email/', views.subscribe_email, name="subscribe-email")
 
 ]

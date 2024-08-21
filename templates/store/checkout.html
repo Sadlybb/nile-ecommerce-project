@@ -76,6 +76,32 @@ Checkout
                             </div>
                             {% endfor %}
                         </div>
+
+                        {% if not addresses %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div>
+                                <table id="add-address">
+                                    <tr>
+                                        <td id="country" style="border: none;padding: 5px;">{{ address_form.country }}</td>
+                                        <td id="city" style="border: none; padding: 5px;">{{ address_form.city }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td id="postal_code" style="border: none;padding: 5px;">{{ address_form.postal_code }}</td>
+                                        <td id="phone_number" style="border: none;padding: 5px;">{{ address_form.assigned_phone_number }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td id="address_line" colspan="2" style="border: none;padding: 5px;">{{ address_form.address_line }}</td>
+                                    </tr>
+                                </table>
+                                <button class="btn btn-small" type="submit" >Add</button>
+                                <br>
+                            </div>
+                            
+                        </form>
+                        
+
+                        {% else %}
                         <div class="ship_detail">
                             <div class="form-group">
                                 <div class="chek-form">
@@ -85,6 +111,8 @@ Checkout
                                     </div>
                                 </div>
                             </div>
+
+
                             <div id="collapseAddress" class="different_address collapse in">
                                 <form method="post">
                                     {% csrf_token %}
@@ -110,13 +138,20 @@ Checkout
                                 <br>
                             </div>
                         </div>
+                        {% endif %}
+
+
+
+
+
+                     
                         <br>
                         <hr>
 
-                        <form action="{% url 'store:place-order' %}" method="POST">
+                        <form class="text-center" action="{% url 'store:place-order' %}" method="POST">
                             {% csrf_token %}
                             <div class="row">
-                                <h4>Receiver:</h4>
+                                <h4>Receiver</h4>
                                 <br>
                                 <br>
     

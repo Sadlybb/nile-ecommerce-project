@@ -12,7 +12,7 @@ from django.conf import settings
 
 from taggit.models import Tag
 
-from . models import Address, Vendor, Category, Product, Review, Cart, CartItem, Customer, Order, OrderItem, Shipment, Wishlist
+from . models import Address, Vendor, Category, Product, Review, Cart, CartItem, Customer, Order, OrderItem, Shipment, Wishlist, EmailSubscription
 from . forms import ReviewForm, AddressForm
 
 
@@ -40,17 +40,31 @@ def about_us(request):
 
 
 def homepage(request):
-    popular_products = Product.objects.prefetch_related("images") \
+    products_in_inventory = Product.objects.prefetch_related("images") \
         .select_related('category') \
         .select_related("vendor") \
-        .filter(is_active=True, publish_status="P", is_featured=True) \
+        .filter(is_active=True, publish_status="P", inventory__gt=0) \
         .annotate(
             orders_count=Count('orders')
     ) \
         .order_by("-orders_count")
 
+    featured_categories = Category.objects.filter(
+        is_active=True, is_featured=True)
+
+    featured_products = Product.objects.prefetch_related("images") \
+        .select_related('category') \
+        .select_related("vendor") \
+        .filter(is_active=True, publish_status="P", inventory__gt=0, is_featured=True) \
+        .annotate(
+            orders_count=Count('orders')
+    ) \
+        .order_by("-orders_count")[:5]
+
     context = {
-        "products": popular_products,
+        "products_in_inventory": products_in_inventory,
+        "featured_categories": featured_categories,
+        "featured_products": featured_products,
     }
     return render(request, 'store/homepage.html', context=context)
 
@@ -59,6 +73,7 @@ def homepage(request):
 
 def category_list(request):
     categories = Category.objects \
+        .filter(is_active=True)\
         .annotate(
             published_product_count=Count('products', filter=Q(products__is_active=True,
                                                                products__publish_status='P'))
@@ -269,22 +284,30 @@ def ajax_add_review(request, pk):
 
 # --------------------------------------------------------------------------Search-----------------------------------------------------------------
 def search_view(request):
-    query = request.GET.get("query")
+    query = request.GET.get("query", "")
+    category_id = request.GET.get("category", "")
 
-    products = Product.objects \
-        .prefetch_related('images') \
-        .select_related('vendor', 'category') \
-        .filter(title__icontains=query)
+    products = Product.objects.prefetch_related('images') \
+        .select_related('vendor', 'category')
+    selected_category = "All Categories"
+
+    if query:
+        products = products.filter(title__icontains=query)
+
+    if category_id:
+        products = products.filter(category_id=category_id)
+        selected_category = Category.objects.get(id=category_id)
 
     context = {
         'products': products,
         'query': query,
+        'selected_category': selected_category,
     }
 
     return render(request, 'store/search.html', context=context)
-
-
 # --------------------------------------------------------------------------Filters-----------------------------------------------------------------
+
+
 def filter_product(request):
     categories = request.GET.getlist("category[]")
     vendors = request.GET.getlist("vendor[]")
@@ -831,3 +854,17 @@ def delete_from_wishlist(request):
     }
 
     return JsonResponse(context)
+
+
+def subscribe_email(request):
+    request_email = request.POST.get('email')
+
+    email, created = EmailSubscription.objects.get_or_create(
+        email=request_email)
+
+    if created:
+        messages.success(request, "Your email added Successfully.")
+    else:
+        messages.warning(request, "This email is already in Database. ")
+
+    return redirect("store:homepage")

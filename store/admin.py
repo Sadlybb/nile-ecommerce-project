@@ -72,8 +72,9 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['title', 'category_image', 'products_count', 'is_active']
-    list_editable = ['is_active']
+    list_display = ['title', 'category_image',
+                    'products_count', 'is_active', 'is_featured']
+    list_editable = ['is_active', 'is_featured']
     exclude = ['created_by']
     search_fields = ['title']
 

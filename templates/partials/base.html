@@ -177,10 +177,10 @@
                     <div class="header-right">
                         <div class="search-style-2">
                             <form action="{% url 'store:search' %}" method="get">
-                                <select class="select-active">
-                                    <option>All Categories</option>
+                                <select class="select-active" name="category">
+                                    <option value="">All Categories</option>
                                     {% for category in categories %}
-                                        <option>{{ category.title }}</option>
+                                        <option value="{{ category.id }}">{{ category.title }}</option>
                                     {% endfor %}
                                 </select>
                                 <input type="text" placeholder="Search for items..." name="query" />
@@ -254,7 +254,7 @@
                                         <a href="{% url 'store:customer-dashboard' %}">
                                             <img class="svgInject" alt="Nest" src="{% static 'assets/imgs/theme/icons/icon-user.svg' %}" />
                                         </a>
-                                        dd
+                                        
                                         <a href="{% url 'store:customer-dashboard' %}"><span class="lable ml-0">Account</span></a>
                                         <div class="cart-dropdown-wrap cart-dropdown-hm2 account-dropdown">
                                             <ul>
@@ -283,7 +283,7 @@
                                         <a href="{% url 'store:customer-dashboard' %}">
                                             <img class="svgInject" alt="Nest" src="{% static 'assets/imgs/theme/icons/icon-user.svg' %}" />
                                         </a>
-                                        <a href="page-account.html"><span class="lable ml-0">Account</span></a>
+                                        <a href="{% url 'userauth:login' %}"><span class="lable ml-0">Account</span></a>
                                         <div class="cart-dropdown-wrap cart-dropdown-hm2 account-dropdown">
                                             <ul>
                                                     <li>
@@ -351,54 +351,10 @@
                         <div class="main-menu main-menu-padding-1 main-menu-lh-2 d-none d-lg-block font-heading">
                             <nav>
                                 <ul>
-                                    <li class="hot-deals"><img src="{% static 'assets/imgs/theme/icons/icon-hot.svg' %}" alt="hot deals" /><a href="shop-grid-right.html">Deals</a></li>
+                                    
                                     <li>
-                                        <a class="active" href="{% url 'store:category_list' %}">All Category <i class="fi-rs-angle-down"></i></a>
-                                        <ul class="sub-menu">
-                                            {% for category in categories %}
-                                            <li><a href="{% url 'store:category_product_list' category.pk %}">{{ category.title }}</a></li>
-                                            {% endfor %}
-                                            <hr>
-                                            <li><a href="{% url 'store:category_list' %}">All Categories</a></li>
-                                        </ul>
-                                    </li>
-                                    <li>
-                                        <a href="{% url 'store:about' %}">About</a>
-                                    </li>
-                                    <li>
-                                        <a href="shop-grid-right.html">Shop <i class="fi-rs-angle-down"></i></a>
-                                        <ul class="sub-menu">
-                                            <li><a href="shop-grid-right.html">Shop Grid – Right Sidebar</a></li>
-                                            <li><a href="shop-grid-left.html">Shop Grid – Left Sidebar</a></li>
-                                            <li><a href="shop-list-right.html">Shop List – Right Sidebar</a></li>
-                                            <li><a href="shop-list-left.html">Shop List – Left Sidebar</a></li>
-                                            <li><a href="shop-fullwidth.html">Shop - Wide</a></li>
-                                            <li>
-                                                <a href="#">Single Product <i class="fi-rs-angle-right"></i></a>
-                                                <ul class="level-menu">
-                                                    <li><a href="shop-product-right.html">Product – Right Sidebar</a></li>
-                                                    <li><a href="shop-product-left.html">Product – Left Sidebar</a></li>
-                                                    <li><a href="shop-product-full.html">Product – No sidebar</a></li>
-                                                    <li><a href="shop-product-vendor.html">Product – Vendor Info</a></li>
-                                                </ul>
-                                            </li>
-                                            <li><a href="shop-filter.html">Shop – Filter</a></li>
-                                            <li><a href="{% url 'store:wishlist' %}">Shop – Wishlist</a></li>
-                                            <li><a href="{% url 'store:cart' %}">Shop – Cart</a></li>
-                                            <li><a href="shop-checkout.html">Shop – Checkout</a></li>
-                                            <li><a href="shop-compare.html">Shop – Compare</a></li>
-                                            <li>
-                                                <a href="#">Shop Invoice<i class="fi-rs-angle-right"></i></a>
-                                                <ul class="level-menu">
-                                                    <li><a href="shop-invoice-1.html">Shop Invoice 1</a></li>
-                                                    <li><a href="shop-invoice-2.html">Shop Invoice 2</a></li>
-                                                    <li><a href="shop-invoice-3.html">Shop Invoice 3</a></li>
-                                                    <li><a href="shop-invoice-4.html">Shop Invoice 4</a></li>
-                                                    <li><a href="shop-invoice-5.html">Shop Invoice 5</a></li>
-                                                    <li><a href="shop-invoice-6.html">Shop Invoice 6</a></li>
-                                                </ul>
-                                            </li>
-                                        </ul>
+                                        <a href="{% url 'store:product_list' %}"><h5 class="text-brand">Shop Now!</h5></a>
+                                        
                                     </li>
                                     <li>
                                         <a href="{% url 'store:vendor_list' %}">Vendors <i class="fi-rs-angle-down"></i></a>
@@ -513,6 +469,9 @@
                                     <li>
                                         <a href="page-contact.html">Contact</a>
                                     </li>
+                                    <li>
+                                        <a href="{% url 'store:about' %}">About</a>
+                                    </li>
                                 </ul>
                             </nav>
                         </div>
@@ -570,6 +529,7 @@
                                                 <a href="#"><i class="fi-rs-cross-small"></i></a>
                                             </div>
                                         </li>
+                             
                                     </ul>
                                     <div class="shopping-cart-footer">
                                         <div class="shopping-cart-total">
@@ -625,10 +585,12 @@
                                 needs from our shop
                             </h2>
                             <p class="mb-45">Start You'r Daily Shopping with <span class="text-brand">Nest Mart</span></p>
-                            <form class="form-subcriber d-flex">
-                                <input type="email" placeholder="Your emaill address" />
+                            <form class="form-subcriber d-flex" action="{% url 'store:subscribe-email' %}" method="post">
+                                {% csrf_token %}
+                                <input name="email" type="email" placeholder="Your emaill address" />
                                 <button class="btn" type="submit">Subscribe</button>
                             </form>
+                        
                         </div>
                         <img src="{% static 'assets/imgs/banner/banner-9.png' %}" alt="newsletter" />
                     </div>

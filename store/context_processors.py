@@ -1,10 +1,16 @@
-from django.db.models import Min, Max
+from django.db.models import Min, Max, Count, Q
 from .models import Category, Vendor, Product, Cart, CartItem, Wishlist
 from taggit.models import Tag
 
 
 def default(request):
-    categories = Category.objects.all()
+    categories = Category.objects \
+        .filter(is_active=True)\
+        .annotate(
+            published_product_count=Count('products', filter=Q(products__is_active=True,
+                                                               products__publish_status='P'))
+        )
+
     vendors = Vendor.objects.prefetch_related('products').all()
     min_max_price = Product.objects.aggregate(
         Min("discount_price"), Max("discount_price"))
